@@ -1,24 +1,31 @@
 # yunexpress-sdk
 
-TypeScript SDK skeleton for the YunExpress OpenAPI. The current version focuses on a stable Node 18+ client foundation: environment switching, auth abstraction, request transport, response envelope parsing, error modeling, and the first confirmed business APIs `orders.createPackage` for `POST /v1/order/package/create` plus `orders.getWaybillDetail` for `GET /v1/order/info/get`.
+TypeScript SDK and CLI for the [YunExpress OpenAPI](https://openapi.yunexpress.cn). Ships a typed Node.js client covering orders, labels, tracking, pricing, billing, exceptions, returns, and basic data lookups, plus a `yunexpress` CLI for quick terminal access.
 
-## Current Scope
+## Features
 
-- Node 18+ runtime with `fetch`
-- ESM + CJS package output with type declarations
-- Sandbox and production auth models
-- Built-in production OAuth token exchange and HMAC signing
-- Replaceable signer and token provider hooks
-- Retry-aware HTTP transport with raw response passthrough
-- Unified error hierarchy for auth, request, rate limit, and upstream failures
-- First concrete resource methods: `orders.createPackage`, `orders.getWaybillDetail`
-- Placeholder resource namespaces for `labels`, `tracking`, `pricing`, `catalog`, `compliance`, `exceptions`, `apiSeries`, `b2b`, and `returns`
+- Node 18+ runtime with native `fetch`
+- ESM + CJS dual-format package with type declarations
+- Sandbox and production environments with auto-switching base URLs
+- Built-in production OAuth token exchange and HMAC-SHA256 request signing
+- Replaceable signer, token provider, and request/response interceptor hooks
+- Retry-aware HTTP transport with configurable retry policy
+- Unified error hierarchy (`AuthenticationError`, `RateLimitError`, `UpstreamApiError`, `RequestExecutionError`)
+- Full resource coverage: orders, labels, tracking, pricing, billing, exceptions, returns, basic
+- CLI with all API operations available as subcommands
 
-## Install And Develop
+## Install
+
+```bash
+npm install yunexpress-sdk
+```
+
+## Develop
 
 ```bash
 vp install
 vp test
+vp check
 vp pack
 ```
 
@@ -115,7 +122,7 @@ const client = new YunExpressClient({
 
 ## Waybill Query
 
-The order query dictionary page for `interfaceId=1659006512874094594` documents `GET /v1/order/info/get` with a single required query parameter `order_number`. The SDK exposes this as a typed method:
+`GET /v1/order/info/get` is exposed as `orders.getWaybillDetail`:
 
 ```ts
 const detail = await client.orders.getWaybillDetail({
@@ -127,6 +134,38 @@ console.log(detail.data.receiver?.country_code);
 ```
 
 The input is normalized to the documented query parameter `order_number`. The response currently preserves the documented wire keys such as `waybill_number`, `customer_order_number`, `packages`, `receiver`, `sender`, and `declaration_info`.
+
+## API Coverage
+
+All resources below are fully typed. Access them as `client.<namespace>.<method>(...)`.
+
+| Namespace      | Method                        | Endpoint                                             |
+| -------------- | ----------------------------- | ---------------------------------------------------- |
+| **orders**     | `createPackage`               | `POST /v1/order/package/create`                      |
+|                | `getWaybillDetail`            | `GET  /v1/order/info/get`                            |
+|                | `getSender`                   | `GET  /v1/order/sender/get`                          |
+|                | `getLastMileCarriers`         | `POST /v1/order/last-mile/get`                       |
+|                | `modifyWeight`                | `POST /v1/order/weight/modify`                       |
+|                | `cancelOrder`                 | `POST /v1/order/cancel`                              |
+|                | `holdOrder`                   | `POST /v1/order/hold`                                |
+|                | `getPickupPoints`             | `POST /v1/pickup/get`                                |
+| **labels**     | `getLabel`                    | `GET  /v1/order/label/get`                           |
+|                | `getShippingDocs`             | `GET  /v1/order/shipping-docs/get`                   |
+|                | `getPod`                      | `GET  /v1/order/pod/get`                             |
+| **tracking**   | `getTrackingInfo`             | `GET  /v1/track-service/info/get`                    |
+|                | `subscribeByWaybill`          | `POST /v1/track-service/subscription/waybill/add`    |
+|                | `cancelSubscriptionByWaybill` | `POST /v1/track-service/subscription/waybill/cancel` |
+|                | `getSubscriptionByWaybill`    | `GET  /v1/track-service/subscription/waybill/get`    |
+|                | `subscribeByProduct`          | `POST /v1/track-service/subscription/product/add`    |
+|                | `cancelSubscriptionByProduct` | `POST /v1/track-service/subscription/product/cancel` |
+|                | `getSubscriptionByProduct`    | `GET  /v1/track-service/subscription/product/get`    |
+| **pricing**    | `getPriceTrial`               | `GET  /v1/price-trial/get`                           |
+| **billing**    | `getBillingDetail`            | `GET  /v1/billing/detail/get`                        |
+|                | `getFreightDetail`            | `GET  /v1/freight/detail/get`                        |
+| **exceptions** | `releaseIssue`                | `POST /v1/issue/release`                             |
+| **returns**    | `createReturnOrder`           | `POST /v1/openapi/order/add`                         |
+| **basic**      | `getCountryCodes`             | `GET  /v1/basic/country/get`                         |
+|                | `getProducts`                 | `GET  /v1/basic/product/get`                         |
 
 ## Low-Level Request Access
 
@@ -160,11 +199,9 @@ The SDK ships a `yunexpress` CLI for quick terminal access to all API resources.
 
 ### Setup
 
-After installing the package, the `yunexpress` binary is available:
-
 ```bash
-# Or run directly from the repo build output
-node dist/cli.mjs --help
+npm install -g yunexpress-sdk
+yunexpress --help
 ```
 
 ### Authentication
@@ -217,47 +254,48 @@ Use `yunexpress <command> --help` to see subcommands and options.
 ### Examples
 
 ```bash
-# List all supported countries
+# Basic data lookups
 yunexpress basic countries
-
-# List all available products
 yunexpress basic products
 
-# Get waybill detail
+# Orders
+yunexpress orders create --data @payload.json
+yunexpress orders create --data '{"productCode":"STANDARD","customerOrderNumber":"ORD-001",...}'
+cat payload.json | yunexpress orders create --data -
 yunexpress orders get --order-number YT2231431267000001
+yunexpress orders get-sender --order-number YT2231431267000001
+yunexpress orders last-mile-carriers --waybill-numbers YT001,YT002
+yunexpress orders modify-weight --waybill-number YT001 --weight 1.5
+yunexpress orders cancel --waybill-number YT2231431267000001
+yunexpress orders hold --waybill-number YT001 --remark "Awaiting docs"
+yunexpress orders pickup-points --country-code DE --postal-code 10115
 
-# Get tracking info
+# Labels and documents
+yunexpress labels get --order-number YT2231431267000001
+yunexpress labels shipping-docs --order-number YT2231431267000001
+yunexpress labels pod --order-number YT2231431267000001
+
+# Tracking
 yunexpress tracking get --order-number YT2231431267000001
+yunexpress tracking subscribe-waybill --waybill-numbers YT001,YT002,YT003
+yunexpress tracking cancel-waybill --waybill-numbers YT001,YT002
+yunexpress tracking get-waybill-sub --waybill-numbers YT001
+yunexpress tracking subscribe-product --product-codes STANDARD,EXPRESS
+yunexpress tracking cancel-product --product-codes STANDARD
+yunexpress tracking get-product-sub --product-code STANDARD
 
-# Get a price estimate
+# Pricing
 yunexpress pricing trial --country-code US --weight 0.5 --weight-unit KG
 
-# Get billing detail with date range
+# Billing
 yunexpress billing detail --start-date 2024-01-01 --end-date 2024-12-31
+yunexpress billing freight --waybill-number YT2231431267000001
 
-# Get a shipping label
-yunexpress labels get --order-number YT2231431267000001
-
-# Cancel an order
-yunexpress orders cancel --waybill-number YT2231431267000001
-
-# Create an order from a JSON file
-yunexpress orders create --data @payload.json
-
-# Create an order from inline JSON
-yunexpress orders create --data '{"productCode":"STANDARD","customerOrderNumber":"ORD-001",...}'
-
-# Pipe JSON from stdin
-cat payload.json | yunexpress orders create --data -
-
-# Create a return order
-yunexpress returns create --data @return-payload.json
-
-# Release an exception
+# Exceptions
 yunexpress exceptions release --waybill-number YT123 --remark "Resolved"
 
-# Subscribe to tracking by waybill numbers
-yunexpress tracking subscribe-waybill --waybill-numbers YT001,YT002,YT003
+# Returns
+yunexpress returns create --data @return-payload.json
 ```
 
 ### Data Input
@@ -275,13 +313,12 @@ For commands with complex payloads (`orders create`, `returns create`), use the 
 The SDK includes a Copilot agent skill that lets AI assistants operate YunExpress shipping on your behalf. Install it with:
 
 ```bash
-npx skills add yunexpress-sdk --skill yunexpress
+npx skills add https://github.com/evan-lc/yunexpress-sdk --skill yunexpress
 ```
 
 Once installed, your AI agent can create orders, track shipments, print labels, and more — just describe what you need in plain language.
 
 ## Known Limitations
 
-- Sandbox token acquisition is still account-specific. Production auto-exchange is built in, but sandbox integrations may still need explicit `accessToken` or `tokenProvider`.
-- Only `orders.createPackage` and `orders.getWaybillDetail` are modeled as concrete business methods. Other resource groups are exposed as extension points, not final method contracts.
-- Most response field schemas are intentionally loose until more official detail pages or integration captures are available.
+- Sandbox token acquisition is account-specific. Production auto-exchange is built in, but sandbox integrations may still need an explicit `accessToken` or `tokenProvider`.
+- Some response field schemas are intentionally loose until more official documentation is available.
