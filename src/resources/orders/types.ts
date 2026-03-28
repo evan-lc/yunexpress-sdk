@@ -80,6 +80,60 @@ export interface GetWaybillDetailRequest {
   orderNumber: string;
 }
 
+export interface GetSenderRequest {
+  orderNumber: string;
+}
+
+export type GetSenderResponse = WaybillParty;
+
+export interface GetLastMileCarriersRequest {
+  waybillNumbers: string[];
+}
+
+export type LastMileCarrierItem = {
+  waybill_number?: string;
+  carrier_code?: string;
+  carrier_name?: string;
+} & Record<string, unknown>;
+
+export type GetLastMileCarriersResponse = LastMileCarrierItem[];
+
+export interface ModifyWeightRequest {
+  waybillNumber: string;
+  weight: number;
+  weightUnit?: "G" | "KG" | "LBS";
+}
+
+export interface CancelOrderRequest {
+  waybillNumber: string;
+}
+
+export interface HoldOrderRequest {
+  waybillNumber: string;
+  remark?: string;
+}
+
+export interface GetPickupPointsRequest {
+  countryCode: string;
+  postalCode?: string;
+  city?: string;
+  carrierCode?: string;
+}
+
+export type PickupPointItem = {
+  point_id?: string;
+  point_name?: string;
+  address?: string;
+  city?: string;
+  postal_code?: string;
+  country_code?: string;
+  carrier_code?: string;
+  latitude?: number;
+  longitude?: number;
+} & Record<string, unknown>;
+
+export type GetPickupPointsResponse = PickupPointItem[];
+
 export type WaybillQueryStatus = string;
 
 export type WaybillRefParcel = {
@@ -173,14 +227,70 @@ export function assertValidCreatePackageRequest(input: CreatePackageRequest): vo
 }
 
 export function assertValidGetWaybillDetailRequest(input: GetWaybillDetailRequest): void {
-  const orderNumber = input.orderNumber.trim();
+  assertOrderNumber(input.orderNumber);
+}
 
-  if (!orderNumber) {
+export function assertValidGetSenderRequest(input: GetSenderRequest): void {
+  assertOrderNumber(input.orderNumber);
+}
+
+export function assertValidGetLastMileCarriersRequest(input: GetLastMileCarriersRequest): void {
+  if (!Array.isArray(input.waybillNumbers) || input.waybillNumbers.length === 0) {
+    throw validationError("waybillNumbers must contain at least one waybill number.");
+  }
+
+  if (input.waybillNumbers.length > 20) {
+    throw validationError("waybillNumbers must contain at most 20 waybill numbers.");
+  }
+}
+
+export function assertValidModifyWeightRequest(input: ModifyWeightRequest): void {
+  assertWaybillNumber(input.waybillNumber);
+
+  if (!Number.isFinite(input.weight) || input.weight < 0.001 || input.weight > 1000) {
+    throw validationError("weight must be between 0.001 and 1000.");
+  }
+}
+
+export function assertValidCancelOrderRequest(input: CancelOrderRequest): void {
+  assertWaybillNumber(input.waybillNumber);
+}
+
+export function assertValidHoldOrderRequest(input: HoldOrderRequest): void {
+  assertWaybillNumber(input.waybillNumber);
+
+  if (input.remark !== undefined && input.remark.length > 255) {
+    throw validationError("remark must be at most 255 characters.");
+  }
+}
+
+export function assertValidGetPickupPointsRequest(input: GetPickupPointsRequest): void {
+  if (!input.countryCode.trim()) {
+    throw validationError("countryCode is required.");
+  }
+}
+
+function assertOrderNumber(orderNumber: string): void {
+  const trimmed = orderNumber.trim();
+
+  if (!trimmed) {
     throw validationError("orderNumber is required.");
   }
 
-  if (orderNumber.length > 50) {
+  if (trimmed.length > 50) {
     throw validationError("orderNumber must be between 1 and 50 characters.");
+  }
+}
+
+function assertWaybillNumber(waybillNumber: string): void {
+  const trimmed = waybillNumber.trim();
+
+  if (!trimmed) {
+    throw validationError("waybillNumber is required.");
+  }
+
+  if (trimmed.length > 50) {
+    throw validationError("waybillNumber must be between 1 and 50 characters.");
   }
 }
 

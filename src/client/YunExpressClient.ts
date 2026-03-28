@@ -13,20 +13,24 @@ import {
   type TransportRequest,
   type TransportResponse,
 } from "../http/transport.ts";
-import { ResourceNamespace } from "../resources/ResourceNamespace.ts";
+import { BasicResource } from "../resources/basic/BasicResource.ts";
+import { BillingResource } from "../resources/billing/BillingResource.ts";
+import { ExceptionsResource } from "../resources/exceptions/ExceptionsResource.ts";
+import { LabelsResource } from "../resources/labels/LabelsResource.ts";
 import { OrdersResource } from "../resources/orders/OrdersResource.ts";
+import { PricingResource } from "../resources/pricing/PricingResource.ts";
+import { ReturnsResource } from "../resources/returns/ReturnsResource.ts";
+import { TrackingResource } from "../resources/tracking/TrackingResource.ts";
 
 export class YunExpressClient {
   readonly orders: OrdersResource;
-  readonly labels: ResourceNamespace;
-  readonly tracking: ResourceNamespace;
-  readonly pricing: ResourceNamespace;
-  readonly catalog: ResourceNamespace;
-  readonly compliance: ResourceNamespace;
-  readonly exceptions: ResourceNamespace;
-  readonly apiSeries: ResourceNamespace;
-  readonly b2b: ResourceNamespace;
-  readonly returns: ResourceNamespace;
+  readonly labels: LabelsResource;
+  readonly tracking: TrackingResource;
+  readonly pricing: PricingResource;
+  readonly exceptions: ExceptionsResource;
+  readonly returns: ReturnsResource;
+  readonly billing: BillingResource;
+  readonly basic: BasicResource;
 
   private readonly transport: YunExpressTransport;
   private readonly options: ResolvedYunExpressClientOptions;
@@ -36,15 +40,13 @@ export class YunExpressClient {
     this.transport = new YunExpressTransport(this.options);
 
     this.orders = new OrdersResource(this);
-    this.labels = new ResourceNamespace(this, "labels");
-    this.tracking = new ResourceNamespace(this, "tracking");
-    this.pricing = new ResourceNamespace(this, "pricing");
-    this.catalog = new ResourceNamespace(this, "catalog");
-    this.compliance = new ResourceNamespace(this, "compliance");
-    this.exceptions = new ResourceNamespace(this, "exceptions");
-    this.apiSeries = new ResourceNamespace(this, "apiSeries");
-    this.b2b = new ResourceNamespace(this, "b2b");
-    this.returns = new ResourceNamespace(this, "returns");
+    this.labels = new LabelsResource(this);
+    this.tracking = new TrackingResource(this);
+    this.pricing = new PricingResource(this);
+    this.exceptions = new ExceptionsResource(this);
+    this.returns = new ReturnsResource(this);
+    this.billing = new BillingResource(this);
+    this.basic = new BasicResource(this);
   }
 
   get environment(): YunExpressEnvironment {

@@ -50,6 +50,13 @@ export {
 } from "./http/transport.ts";
 
 export { OrdersResource } from "./resources/orders/OrdersResource.ts";
+export { LabelsResource } from "./resources/labels/LabelsResource.ts";
+export { TrackingResource } from "./resources/tracking/TrackingResource.ts";
+export { PricingResource } from "./resources/pricing/PricingResource.ts";
+export { ExceptionsResource } from "./resources/exceptions/ExceptionsResource.ts";
+export { ReturnsResource } from "./resources/returns/ReturnsResource.ts";
+export { BillingResource } from "./resources/billing/BillingResource.ts";
+export { BasicResource } from "./resources/basic/BasicResource.ts";
 export { ResourceNamespace } from "./resources/ResourceNamespace.ts";
 export type {
   ContactParty,
@@ -59,6 +66,17 @@ export type {
   DeclarationItem,
   GetWaybillDetailRequest,
   GetWaybillDetailResponse,
+  GetSenderRequest,
+  GetSenderResponse,
+  GetLastMileCarriersRequest,
+  GetLastMileCarriersResponse,
+  LastMileCarrierItem,
+  ModifyWeightRequest,
+  CancelOrderRequest,
+  HoldOrderRequest,
+  GetPickupPointsRequest,
+  GetPickupPointsResponse,
+  PickupPointItem,
   PackageDimensions,
   SizeUnit,
   WaybillDeclarationItem,
@@ -71,7 +89,66 @@ export type {
 export {
   assertValidCreatePackageRequest,
   assertValidGetWaybillDetailRequest,
+  assertValidGetSenderRequest,
+  assertValidGetLastMileCarriersRequest,
+  assertValidModifyWeightRequest,
+  assertValidCancelOrderRequest,
+  assertValidHoldOrderRequest,
+  assertValidGetPickupPointsRequest,
 } from "./resources/orders/types.ts";
+
+export type {
+  GetLabelRequest,
+  GetShippingDocsRequest,
+  GetPodRequest,
+  LabelResponse,
+} from "./resources/labels/types.ts";
+
+export type {
+  GetTrackingInfoRequest,
+  TrackEvent,
+  TrackingResult,
+  SubscribeTrackingByWaybillRequest,
+  CancelTrackingSubscriptionByWaybillRequest,
+  GetTrackingSubscriptionByWaybillRequest,
+  SubscribeTrackingByProductRequest,
+  CancelTrackingSubscriptionByProductRequest,
+  GetTrackingSubscriptionByProductRequest,
+  TrackingSubscriptionDataItem,
+  TrackingSubscriptionDataResponse,
+} from "./resources/tracking/types.ts";
+
+export type {
+  GetPriceTrialRequest,
+  GetPriceTrialResponse,
+  PriceTrialItem,
+} from "./resources/pricing/types.ts";
+
+export type { ReleaseIssueRequest } from "./resources/exceptions/types.ts";
+
+export type {
+  CreateReturnOrderRequest,
+  CreateReturnOrderResponse,
+  ReturnOrderSender,
+  ReturnOrderReceiver,
+  ReturnOrderGoodsItem,
+} from "./resources/returns/types.ts";
+
+export type {
+  GetBillingDetailRequest,
+  GetBillingDetailResponse,
+  BillingDetailItem,
+  GetFreightDetailRequest,
+  GetFreightDetailResponse,
+  FreightFeeDetail,
+} from "./resources/billing/types.ts";
+
+export type {
+  CountryItem,
+  GetCountryCodesResponse,
+  ProductItem,
+  GetProductsResponse,
+} from "./resources/basic/types.ts";
 
 export {
   AuthenticationError,
