@@ -270,6 +270,16 @@ For commands with complex payloads (`orders create`, `returns create`), use the 
 | File        | `--data @payload.json`           |
 | Stdin       | `--data -` (pipe via stdin)      |
 
+## Agent Skill
+
+The SDK includes a Copilot agent skill that lets AI assistants operate YunExpress shipping on your behalf. Install it with:
+
+```bash
+npx skills add yunexpress-sdk --skill yunexpress
+```
+
+Once installed, your AI agent can create orders, track shipments, print labels, and more — just describe what you need in plain language.
+
 ## Known Limitations
 
 - Sandbox token acquisition is still account-specific. Production auto-exchange is built in, but sandbox integrations may still need explicit `accessToken` or `tokenProvider`.
