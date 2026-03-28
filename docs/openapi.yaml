@@ -1,0 +1,2272 @@
+openapi: 3.0.3
+info:
+  title: YunExpress Open API
+  description: |
+    YunExpress (云途) cross-border logistics open API.
+    Provides services for order creation, tracking, pricing, label printing,
+    exception handling, and return management.
+  version: "1.0.0"
+  contact:
+    name: YunExpress Open Platform
+    url: https://open.yunexpress.cn
+
+servers:
+  - url: https://openapi.yunexpress.cn
+    description: Production
+  - url: https://openapi-sbx.yunexpress.cn
+    description: Sandbox
+
+security:
+  - yunexpressAuth: []
+
+tags:
+  - name: Orders
+    description: Order creation and management (直发服务)
+  - name: Order Query
+    description: Query order details and sender information (订单查询)
+  - name: Order Modification
+    description: Modify, cancel, or hold orders (订单修改)
+  - name: Labels
+    description: Waybill label and document printing (面单打印)
+  - name: Tracking
+    description: Tracking and trajectory services (轨迹服务)
+  - name: Tracking Subscription
+    description: Track subscription management (轨迹订阅)
+  - name: Pricing
+    description: Freight pricing and trial calculation (费用服务)
+  - name: Fee Query
+    description: Freight and billing queries (运费查询/账单查询)
+  - name: Exceptions
+    description: Exception order handling (异常订单)
+  - name: Returns
+    description: Return order services (退件服务)
+  - name: Basic
+    description: Basic information services (基础服务)
+
+paths:
+  /v1/order/package/create:
+    post:
+      operationId: createPackage
+      summary: Create package (单票寄件)
+      description: |
+        Create a single shipment order. Supports international express, registered mail,
+        economy mail, and other logistics products.
+      tags:
+        - Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePackageRequest"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_CreatePackageResponse"
+              example:
+                t: 1678415735
+                success: true
+                result:
+                  customer_order_number: "C06901223361651120772372746_D8720"
+                  waybill_number: "YT2233621266010029"
+                  tracking_number: "LE339614461CN"
+                  bar_codes:
+                    - "YT2233621266010029"
+                  remote_area: false
+                  track_type: "1"
+                  shipper_boxs: []
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /v1/order/info/get:
+    get:
+      operationId: getWaybillDetail
+      summary: Query waybill detail (查询运单详情)
+      description: |
+        Query waybill details by order number. Supports waybill number,
+        customer order number, or tracking number.
+      tags:
+        - Order Query
+      parameters:
+        - name: order_number
+          in: query
+          required: true
+          description: "Order number (supports waybill number, customer order number, tracking number). Length: 1-50"
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 50
+          example: "YT2231431267000001"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_GetWaybillDetailResponse"
+              example:
+                t: 1678415735
+                success: true
+                result:
+                  waybill_number: "YT2233621266010029"
+                  customer_order_number: "C06901223361651120772372746_D8720"
+                  product_code: "THZXR"
+                  tracking_number: ""
+                  platform_account_code: ""
+                  pieces: 1
+                  weight_unit: "KG"
+                  size_unit: "CM"
+                  status: "C"
+                  sensitive_type: 0
+                  source_code: "CaiNiao"
+                  chargeWeight: 0
+                  packages:
+                    - weight: 2.2
+                      length: 1
+                      width: 1
+                      height: 1
+                  receiver:
+                    country_code: "BR"
+                    first_name: "Jodie Langton"
+                    last_name: ""
+                    company: "AM Company"
+                    address_lines:
+                      - "L"
+                      - "Address273"
+                    city: "PESCIA"
+                    province: ""
+                    phone_number: "1924364790"
+                    email: "21@fddggf.fgfg"
+                    postal_code: "00"
+                  sender:
+                    country_code: "CA"
+                    first_name: "test"
+                    last_name: ""
+                    company: "test gs"
+                    address_lines:
+                      - "207 TELLURIDE DR"
+                    city: "GEORGETOWN"
+                    province: "TX"
+                    phone_number: "5869098233"
+                    postal_code: "78626-7163"
+                  declaration_info:
+                    - sku_code: "ABC0013142"
+                      name_local: "测试"
+                      name_en: "test001"
+                      quantity: 6
+                      unit_price: 0.28
+                      unit_weight: 2
+                      hs_code: "8517629900"
+                      currency: "USD"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/order/sender/get:
+    get:
+      operationId: getSender
+      summary: Query sender info (查询发件人)
+      description: Query sender information by order number.
+      tags:
+        - Order Query
+      parameters:
+        - name: order_number
+          in: query
+          required: true
+          description: "Order number (supports waybill number, customer order number, tracking number). Length: 1-50"
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 50
+          example: "YT2231431267000001"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_SenderResponse"
+              example:
+                t: 1678415735
+                success: true
+                result:
+                  country_code: "CN"
+                  first_name: "张三"
+                  last_name: ""
+                  company: "测试公司"
+                  address_lines:
+                    - "深圳市南山区科技园"
+                  city: "深圳"
+                  province: "广东"
+                  phone_number: "13800138000"
+                  postal_code: "518000"
+
+  /v1/order/last-mile/get:
+    post:
+      operationId: getLastMileCarriers
+      summary: Query last-mile carrier (查询运单末端派送商)
+      description: |
+        Query last-mile delivery carrier information for waybills.
+        Supports batch query with up to 20 waybill numbers.
+      tags:
+        - Order Query
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - waybill_numbers
+              properties:
+                waybill_numbers:
+                  type: array
+                  description: "Waybill numbers. Max 20 items."
+                  maxItems: 20
+                  items:
+                    type: string
+                  example:
+                    - "YT2231431267000001"
+                    - "YT2231431267000002"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_LastMileCarrierList"
+
+  /v1/order/weight/modify:
+    post:
+      operationId: modifyWeight
+      summary: Modify forecast weight (修改运单预报重量)
+      description: Modify the forecast weight of a waybill that has not been received at the warehouse.
+      tags:
+        - Order Modification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - waybill_number
+                - weight
+              properties:
+                waybill_number:
+                  type: string
+                  description: "Waybill number. Length: 1-50"
+                  minLength: 1
+                  maxLength: 50
+                  example: "YT2231431267000001"
+                weight:
+                  type: number
+                  description: "New weight value. Range: 0.001-1000"
+                  minimum: 0.001
+                  maximum: 1000
+                  example: 2.5
+                weight_unit:
+                  type: string
+                  description: "Weight unit"
+                  enum:
+                    - KG
+                    - G
+                    - LBS
+                  default: KG
+                  example: "KG"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_Empty"
+
+  /v1/order/cancel:
+    post:
+      operationId: cancelOrder
+      summary: Cancel waybill (撤销运单)
+      description: |
+        Cancel a waybill. Can only cancel orders that have not been received at the warehouse.
+      tags:
+        - Order Modification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - waybill_number
+              properties:
+                waybill_number:
+                  type: string
+                  description: "Waybill number. Length: 1-50"
+                  minLength: 1
+                  maxLength: 50
+                  example: "YT2231431267000001"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_Empty"
+
+  /v1/order/hold:
+    post:
+      operationId: holdOrder
+      summary: Hold/intercept waybill (拦截运单)
+      description: |
+        Intercept a waybill to prevent it from being shipped.
+      tags:
+        - Order Modification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - waybill_number
+              properties:
+                waybill_number:
+                  type: string
+                  description: "Waybill number. Length: 1-50"
+                  minLength: 1
+                  maxLength: 50
+                  example: "YT2231431267000001"
+                remark:
+                  type: string
+                  description: "Remark. Length: 0-255"
+                  maxLength: 255
+                  example: "Customer requested hold"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_Empty"
+
+  /v1/order/label/get:
+    get:
+      operationId: getLabel
+      summary: Get waybill label (获取运单标签)
+      description: |
+        Get waybill label by order number. Returns label in PDF format.
+        Supports waybill number, customer order number, or tracking number.
+      tags:
+        - Labels
+      parameters:
+        - name: order_number
+          in: query
+          required: true
+          description: "Order number (supports waybill number, customer order number, tracking number). Length: 1-50"
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 50
+          example: "YT2231431267000001"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_LabelResponse"
+              example:
+                t: 1678415735
+                success: true
+                result:
+                  order_number: "YT2231431267000001"
+                  url: "https://label.yunexpress.cn/label.pdf"
+                  label_type: "PDF"
+                  label_string: ""
+
+  /v1/order/shipping-docs/get:
+    get:
+      operationId: getShippingDocs
+      summary: Get shipping proof (获取发货证明)
+      description: |
+        Get shipping proof document by order number.
+        Supports waybill number, customer order number, or tracking number.
+      tags:
+        - Labels
+      parameters:
+        - name: order_number
+          in: query
+          required: true
+          description: "Order number (supports waybill number, customer order number, tracking number). Length: 1-50"
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 50
+          example: "YT2231431267000001"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_LabelResponse"
+
+  /v1/order/pod/get:
+    get:
+      operationId: getPod
+      summary: Get proof of delivery (获取签收证明)
+      description: |
+        Get proof of delivery (POD) document by order number.
+        Supports waybill number, customer order number, or tracking number.
+      tags:
+        - Labels
+      parameters:
+        - name: order_number
+          in: query
+          required: true
+          description: "Order number (supports waybill number, customer order number, tracking number). Length: 1-50"
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 50
+          example: "YT2231431267000001"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_LabelResponse"
+
+  /v1/track-service/info/get:
+    get:
+      operationId: getTrackingInfo
+      summary: Query waybill tracking (查询运单轨迹)
+      description: |
+        Query tracking information by order number.
+        Supports waybill number, customer order number, or tracking number.
+        Note: if tracking is subscribed by waybill number or product, use the subscribed number to query.
+      tags:
+        - Tracking
+      parameters:
+        - name: order_number
+          in: query
+          required: true
+          description: "Order number (supports waybill number, customer order number, tracking number). Length: 1-50"
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 50
+          example: "YT2231431267000001"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_TrackingResponse"
+              example:
+                t: 1678415735
+                success: true
+                result:
+                  waybill_number: "YT2231431267000001"
+                  track_info:
+                    - track_events:
+                        - time_zone: "+8"
+                          description: "Parcel has been delivered"
+                          event_date: "2023-03-10 14:30:00"
+                          location: "New York"
+
+  /v1/track-service/subscription/waybill/add:
+    post:
+      operationId: subscribeTrackingByWaybill
+      summary: Subscribe tracking by waybill (按运单号订阅轨迹)
+      description: |
+        Subscribe to tracking updates by waybill number and tracking subscription mode.
+        For customized tracking display requirements. Max 50 waybill numbers per request.
+      tags:
+        - Tracking Subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - waybill_numbers
+              properties:
+                waybill_numbers:
+                  type: array
+                  description: "Waybill numbers to subscribe. Max 50 items."
+                  maxItems: 50
+                  items:
+                    type: string
+                subscription_mode:
+                  type: string
+                  description: "Tracking subscription mode"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_Empty"
+
+  /v1/track-service/subscription/waybill/cancel:
+    post:
+      operationId: cancelTrackingSubscriptionByWaybill
+      summary: Cancel tracking subscription by waybill (按运单号取消轨迹订阅)
+      description: |
+        Cancel tracking subscription by waybill number. Max 50 waybill numbers per request.
+      tags:
+        - Tracking Subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - waybill_numbers
+              properties:
+                waybill_numbers:
+                  type: array
+                  description: "Waybill numbers to unsubscribe. Max 50 items."
+                  maxItems: 50
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_Empty"
+
+  /v1/track-service/subscription/waybill/get:
+    get:
+      operationId: getTrackingSubscriptionByWaybill
+      summary: Get tracking subscription data by waybill (获取按运单号轨迹订阅的数据)
+      description: |
+        Get tracking data for waybill-based subscriptions. Max 50 waybill numbers per request.
+      tags:
+        - Tracking Subscription
+      parameters:
+        - name: waybill_numbers
+          in: query
+          required: true
+          description: "Comma-separated waybill numbers. Max 50."
+          schema:
+            type: string
+          example: "YT2231431267000001,YT2231431267000002"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_TrackingSubscriptionDataList"
+
+  /v1/track-service/subscription/product/add:
+    post:
+      operationId: subscribeTrackingByProduct
+      summary: Subscribe tracking by product (按物流产品订阅轨迹)
+      description: |
+        Subscribe to tracking updates by logistics product code.
+        For customized tracking display requirements. Max 50 product codes per request.
+      tags:
+        - Tracking Subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - product_codes
+              properties:
+                product_codes:
+                  type: array
+                  description: "Logistics product codes to subscribe. Max 50 items."
+                  maxItems: 50
+                  items:
+                    type: string
+                subscription_mode:
+                  type: string
+                  description: "Tracking subscription mode"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_Empty"
+
+  /v1/track-service/subscription/product/cancel:
+    post:
+      operationId: cancelTrackingSubscriptionByProduct
+      summary: Cancel tracking subscription by product (按物流产品取消轨迹订阅)
+      description: |
+        Cancel tracking subscription by logistics product code. Max 50 product codes per request.
+      tags:
+        - Tracking Subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - product_codes
+              properties:
+                product_codes:
+                  type: array
+                  description: "Product codes to unsubscribe. Max 50 items."
+                  maxItems: 50
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_Empty"
+
+  /v1/track-service/subscription/product/get:
+    get:
+      operationId: getTrackingSubscriptionByProduct
+      summary: Get tracking subscription data by product (获取物流产品订阅轨迹的数据)
+      description: |
+        Get tracking data for product-based subscriptions by product code.
+      tags:
+        - Tracking Subscription
+      parameters:
+        - name: product_code
+          in: query
+          required: true
+          description: "Logistics product code"
+          schema:
+            type: string
+          example: "BKZXR"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_TrackingSubscriptionDataList"
+
+  /v1/pickup/get:
+    post:
+      operationId: getPickupPoints
+      summary: Query pickup points (查询自提点列表)
+      description: |
+        Query available pickup/drop-off point locations by country, postal code, city, and carrier.
+      tags:
+        - Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - country_code
+              properties:
+                country_code:
+                  type: string
+                  description: "Destination country code (ISO 3166-1 alpha-2)"
+                  example: "FR"
+                postal_code:
+                  type: string
+                  description: "Postal code"
+                  example: "75001"
+                city:
+                  type: string
+                  description: "City name"
+                  example: "Paris"
+                carrier_code:
+                  type: string
+                  description: "Carrier code"
+                  example: "COLISSIMO"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_PickupPointList"
+
+  /v1/price-trial/get:
+    get:
+      operationId: getPriceTrial
+      summary: Freight price trial (试算物流运费)
+      description: |
+        Calculate estimated logistics freight based on destination country, package weight,
+        and dimensions. Returned prices are for reference only; final charges are based on actual billing.
+      tags:
+        - Pricing
+      parameters:
+        - name: country_code
+          in: query
+          required: true
+          description: "Destination country/region ISO 2-letter code. Length: 2"
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 2
+          example: "US"
+        - name: weight
+          in: query
+          required: true
+          description: "Package weight. Range: 0.001-1000.000"
+          schema:
+            type: number
+            minimum: 0.001
+            maximum: 1000
+          example: 1.299
+        - name: weight_unit
+          in: query
+          required: false
+          description: "Weight unit"
+          schema:
+            type: string
+            enum:
+              - KG
+              - G
+              - LBS
+            default: KG
+          example: "KG"
+        - name: package_type
+          in: query
+          required: false
+          description: "Package type"
+          schema:
+            type: string
+            enum:
+              - C
+              - E
+              - F
+            description: "C=General cargo, E=Battery/electric, F=Special cargo"
+          example: "E"
+        - name: postal_code
+          in: query
+          required: false
+          description: "Postal code. Length: 0-20"
+          schema:
+            type: string
+            maxLength: 20
+          example: "518000"
+        - name: product_group_code
+          in: query
+          required: false
+          description: |
+            Logistics product group code. Options:
+            DH=Express, EM=Economy (postal), FB=FBA, MA=Standard registered,
+            PY=Priority (commercial), UP=Standard EUB, SP=Express dedicated,
+            A=Air freight, RT=Standard return, EP=Shenzhen airport express
+          schema:
+            type: string
+            enum:
+              - DH
+              - EM
+              - FB
+              - MA
+              - PY
+              - UP
+              - SP
+              - A
+              - RT
+              - EP
+          example: "DH"
+        - name: pieces
+          in: query
+          required: false
+          description: "Number of pieces. Range: 0-1000"
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 1000
+          example: 2
+        - name: length
+          in: query
+          required: false
+          description: "Package length (default 1). Range: 0-10000"
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10000
+            default: 1
+          example: 1.364
+        - name: width
+          in: query
+          required: false
+          description: "Package width (default 1). Range: 0-10000"
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10000
+            default: 1
+          example: 4.224
+        - name: height
+          in: query
+          required: false
+          description: "Package height (default 1). Range: 0-10000"
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10000
+            default: 1
+          example: 2.457
+        - name: size_unit
+          in: query
+          required: false
+          description: "Dimension unit"
+          schema:
+            type: string
+            enum:
+              - CM
+              - INCH
+            default: CM
+          example: "CM"
+        - name: origin
+          in: query
+          required: false
+          description: "Billing location (YunExpress default: YT-SZ). Length: 1-20"
+          schema:
+            type: string
+            maxLength: 20
+            default: "YT-SZ"
+          example: "YT-SZ"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_PriceTrialList"
+              example:
+                t: "1679367266860"
+                success: true
+                result:
+                  - product_code: "BKZXR"
+                    product_name: "云途全球专线挂号（标快）"
+                    fee_name: "E1"
+                    calculate_amount: 8
+                    currency: "RMB"
+                    interval_day: "3-8"
+                    price_name: "云途全球专线挂号（标快）A价"
+                    price_type: "MK"
+                    convert_currency: "RMB"
+                    rate: 1
+                    convert_amount: 8
+
+  /v1/issue/release:
+    post:
+      operationId: releaseIssue
+      summary: Release exception order (异常处理放行)
+      description: |
+        Release an exception/held order. Supports:
+        - Pure release (no value-added operations)
+        - Release with value-added operations (split, merge, reinforce, repack)
+
+        Value-added operations:
+        - 203: Repack (更换包装)
+        - 204: Merge (合箱)
+        - 205: Split (分箱)
+        - 206: Reinforce (加固)
+
+        Note: Split and Merge are mutually exclusive. Multiple value-added operations can be selected.
+      tags:
+        - Exceptions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IssueReleaseRequest"
+            example:
+              waybill_number: "YT2426322ECO000024"
+              remark: "Release remark"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_Empty"
+              example:
+                t: 1726734728406
+                success: true
+                code: "00000000"
+                msg: "处理成功"
+
+  /v1/openapi/order/add:
+    post:
+      operationId: createReturnOrder
+      summary: Create return order (创建退件订单)
+      description: |
+        Create a return order in the return order system. Supports different handling methods:
+        - RTZC: Store at warehouse (到仓暂存)
+        - RTQJ: Dispose at warehouse (到仓弃件)
+        - RTXH: Destroy at warehouse (到仓销毁)
+        - RTZY: Forward/reship from warehouse (到仓转运)
+      tags:
+        - Returns
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReturnOrderRequest"
+            example:
+              product_code: "SEZXR"
+              handle_code: "RTZY"
+              warehouse_code: "CN0007"
+              send_type: "RTZD"
+              weight: 1
+              length: 1
+              width: 1
+              height: 1
+              extra_services:
+                - "P0"
+                - "RT06"
+              sender:
+                name: "John Doe"
+                phone_number: "11234567890"
+                country_code: "US"
+                province: "CA"
+                city: "Los Angeles"
+                address_lines: "123 Main St"
+                postal_code: "90001"
+              goods_list:
+                - name_local: "testsku"
+                  name_en: "testsku"
+                  quantity: 2
+              receiver:
+                name: "Jane Smith"
+                company: "Test Company"
+                phone_number: "13800138000"
+                country_code: "CN"
+                province: "广东省"
+                city: "深圳市"
+                address_lines: "南山区科技园100号"
+                postal_code: "518000"
+              customer_order_no: "RET12345"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_CreateReturnOrderResponse"
+              example:
+                success: true
+                t: "1773993840"
+                result:
+                  order_code: "RT267999999000030"
+                  tracking_number: "20260320160359524"
+                  label_urls:
+                    - "https://label.yunexpress.cn/label.pdf"
+                  free_days: 1
+
+  /v1/billing/detail/get:
+    get:
+      operationId: getBillingDetail
+      summary: Get billing details (获取账单明细列表)
+      description: |
+        Query billing fee details for the customer account.
+      tags:
+        - Fee Query
+      parameters:
+        - name: waybill_number
+          in: query
+          required: false
+          description: "Waybill number to query billing for"
+          schema:
+            type: string
+        - name: start_date
+          in: query
+          required: false
+          description: "Start date for billing query (format: yyyy-MM-dd)"
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: false
+          description: "End date for billing query (format: yyyy-MM-dd)"
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          required: false
+          description: "Page number"
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          required: false
+          description: "Page size"
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_BillingDetailList"
+
+  /v1/freight/detail/get:
+    get:
+      operationId: getFreightDetail
+      summary: Get freight charge details (获取运单扣费详情)
+      description: |
+        Query freight charge details for a specific waybill.
+      tags:
+        - Fee Query
+      parameters:
+        - name: waybill_number
+          in: query
+          required: true
+          description: "Waybill number"
+          schema:
+            type: string
+          example: "YT2231431267000001"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_FreightDetailResponse"
+
+  /v1/basic/country/get:
+    get:
+      operationId: getCountryCodes
+      summary: Query country codes (查询国家简码)
+      description: Query available country/region codes and names.
+      tags:
+        - Basic
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_CountryList"
+
+  /v1/basic/product/get:
+    get:
+      operationId: getProducts
+      summary: Query logistics products (查询物流产品)
+      description: Query available logistics product codes and information.
+      tags:
+        - Basic
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiEnvelope_ProductList"
+
+components:
+  securitySchemes:
+    yunexpressAuth:
+      type: apiKey
+      in: header
+      name: token
+      description: |
+        Application authentication token. All requests require the following headers:
+        - `token` (string, required): Authentication token
+        - `date` (long, required): Current timestamp in milliseconds (e.g. 1654060801140)
+        - `sign` (string, required): HMAC-SHA256 signature of request time + request line + request body
+        - `Accept-Language` (string, optional): Response language (en-US, zh-CN, zh-HK)
+
+  responses:
+    Unauthorized:
+      description: Authentication failed - invalid or expired token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    # ── Envelope ──────────────────────────────────────────────
+    ErrorResponse:
+      type: object
+      properties:
+        t:
+          oneOf:
+            - type: string
+            - type: integer
+          description: Response timestamp
+        success:
+          type: boolean
+          example: false
+        code:
+          type: string
+          description: Error code
+        msg:
+          type: string
+          description: Error message
+        request_id:
+          type: string
+          description: Request ID for troubleshooting
+
+    ApiEnvelope_Empty:
+      type: object
+      properties:
+        t:
+          oneOf:
+            - type: string
+            - type: integer
+          description: Response timestamp
+        success:
+          type: boolean
+        code:
+          type: string
+        msg:
+          type: string
+        request_id:
+          type: string
+
+    # ── Create Package ────────────────────────────────────────
+    CreatePackageRequest:
+      type: object
+      required:
+        - product_code
+        - customer_order_number
+        - weight_unit
+        - size_unit
+        - packages
+        - receiver
+        - declaration_info
+      properties:
+        product_code:
+          type: string
+          description: "Logistics product code. Length: 1-50"
+          minLength: 1
+          maxLength: 50
+          example: "BKZXR"
+        customer_order_number:
+          type: string
+          description: "Customer order number. Length: 1-50"
+          minLength: 1
+          maxLength: 50
+          example: "CUST-ORD-001"
+        order_numbers:
+          type: array
+          description: "Additional order numbers"
+          items:
+            type: string
+        weight_unit:
+          type: string
+          description: "Weight unit"
+          enum:
+            - KG
+            - G
+            - LBS
+          example: "KG"
+        size_unit:
+          type: string
+          description: "Dimension unit"
+          enum:
+            - CM
+            - INCH
+          example: "CM"
+        dangerous_goods_type:
+          type: string
+          description: "Dangerous goods type code"
+        packages:
+          type: array
+          description: "Package list (at least 1 package required)"
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/Package"
+        receiver:
+          $ref: "#/components/schemas/ContactParty"
+        sender:
+          $ref: "#/components/schemas/ContactParty"
+        declaration_info:
+          type: array
+          description: "Customs declaration items (at least 1 required)"
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/DeclarationItem"
+        customs_number:
+          type: string
+          description: "Customs registration number"
+        extra_services:
+          type: array
+          description: "Extra/value-added services"
+          items:
+            type: object
+            additionalProperties: true
+        platform_account_code:
+          type: string
+          description: "Platform account code (e.g. Amazon, eBay)"
+        source_code:
+          type: string
+          description: "Source/channel code"
+        sensitive_type:
+          type: string
+          description: "Sensitive goods type"
+        label_type:
+          type: string
+          description: "Label format type"
+        point_relais_num:
+          type: string
+          description: "Pickup point relay number (Point Relais)"
+        manufacture_sales_name:
+          type: string
+          description: "Manufacturer/seller name"
+        credit_code:
+          type: string
+          description: "Credit/social credit code"
+      additionalProperties: true
+
+    Package:
+      type: object
+      required:
+        - weight
+      properties:
+        weight:
+          type: number
+          description: "Package weight (> 0, max 3 decimal places)"
+          minimum: 0.001
+          example: 2.5
+        length:
+          type: number
+          description: "Package length"
+          example: 30
+        width:
+          type: number
+          description: "Package width"
+          example: 20
+        height:
+          type: number
+          description: "Package height"
+          example: 10
+        box_number:
+          type: string
+          description: "Box/carton number"
+        reference_id:
+          type: string
+          description: "Package reference ID"
+        ref_parcels:
+          type: array
+          description: "Reference parcel SKUs"
+          items:
+            type: object
+            properties:
+              sku_code:
+                type: string
+                description: "SKU code"
+              quantity:
+                type: integer
+                description: "Quantity"
+      additionalProperties: true
+
+    ContactParty:
+      type: object
+      properties:
+        name:
+          type: string
+          description: "Full name"
+          example: "John Doe"
+        first_name:
+          type: string
+          description: "First name"
+        last_name:
+          type: string
+          description: "Last name"
+        company:
+          type: string
+          description: "Company name"
+        country_code:
+          type: string
+          description: "Country code (ISO 3166-1 alpha-2)"
+          example: "US"
+        province:
+          type: string
+          description: "State/province"
+          example: "California"
+        city:
+          type: string
+          description: "City"
+          example: "Los Angeles"
+        address_lines:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          description: "Address line(s)"
+          example: "123 Main Street"
+        address_line1:
+          type: string
+          description: "Address line 1"
+        address_line2:
+          type: string
+          description: "Address line 2"
+        address_line3:
+          type: string
+          description: "Address line 3"
+        postal_code:
+          type: string
+          description: "Postal/ZIP code"
+          example: "90001"
+        phone:
+          type: string
+          description: "Phone number (alternate field name)"
+        phone_number:
+          type: string
+          description: "Phone number"
+          example: "+1234567890"
+        email:
+          type: string
+          description: "Email address"
+          format: email
+        id_type:
+          type: string
+          description: "ID document type"
+        id_number:
+          type: string
+          description: "ID document number"
+        certificate_type:
+          type: string
+          description: "Certificate type (alternate field name)"
+        certificate_code:
+          type: string
+          description: "Certificate code (alternate field name)"
+      additionalProperties: true
+
+    DeclarationItem:
+      type: object
+      properties:
+        sku:
+          type: string
+          description: "SKU code (alternate field name)"
+        sku_code:
+          type: string
+          description: "SKU code"
+          example: "SKU001"
+        name:
+          type: string
+          description: "Item name (alternate field name)"
+        name_local:
+          type: string
+          description: "Item name in local language"
+          example: "测试产品"
+        name_en:
+          type: string
+          description: "Item name in English"
+          example: "Test Product"
+        quantity:
+          type: integer
+          description: "Quantity"
+          example: 2
+        declared_value:
+          type: number
+          description: "Declared value per unit (alternate field name)"
+        unit_price:
+          type: number
+          description: "Unit price"
+          example: 9.99
+        unit_weight:
+          type: number
+          description: "Unit weight"
+          example: 0.5
+        currency:
+          type: string
+          description: "Currency code (e.g. USD, EUR, CNY)"
+          example: "USD"
+        hs_code:
+          type: string
+          description: "HS code for customs"
+          example: "8517629900"
+        sales_url:
+          type: string
+          description: "Product sales URL"
+        material:
+          type: string
+          description: "Material description"
+        usage:
+          type: string
+          description: "Item usage/purpose (alternate field name)"
+        purpose:
+          type: string
+          description: "Item purpose"
+        brand:
+          type: string
+          description: "Brand name"
+        specification:
+          type: string
+          description: "Specification (alternate field name)"
+        spec:
+          type: string
+          description: "Specification"
+        model:
+          type: string
+          description: "Model number"
+        remark:
+          type: string
+          description: "Remark"
+        attachment:
+          type: string
+          description: "Attachment URL or reference"
+      additionalProperties: true
+
+    ApiEnvelope_CreatePackageResponse:
+      type: object
+      properties:
+        t:
+          oneOf:
+            - type: string
+            - type: integer
+          description: Response timestamp
+        success:
+          type: boolean
+        code:
+          type: string
+        msg:
+          type: string
+        request_id:
+          type: string
+        result:
+          $ref: "#/components/schemas/CreatePackageResponse"
+
+    CreatePackageResponse:
+      type: object
+      properties:
+        customer_order_number:
+          type: string
+          description: "Customer order number"
+        waybill_number:
+          type: string
+          description: "YunExpress waybill number (YT number)"
+        tracking_number:
+          type: string
+          description: "Tracking number"
+        track_type:
+          type: string
+          description: "Track type flag"
+        bar_codes:
+          type: array
+          items:
+            type: string
+          description: "Barcodes"
+        remote_area:
+          description: "Remote area flag"
+          oneOf:
+            - type: boolean
+            - type: integer
+            - type: string
+        shipper_boxs:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          description: "Shipper box information"
+      additionalProperties: true
+
+    # ── Waybill Detail ────────────────────────────────────────
+    ApiEnvelope_GetWaybillDetailResponse:
+      type: object
+      properties:
+        t:
+          oneOf:
+            - type: string
+            - type: integer
+        success:
+          type: boolean
+        code:
+          type: string
+        msg:
+          type: string
+        request_id:
+          type: string
+        result:
+          $ref: "#/components/schemas/WaybillDetail"
+
+    WaybillDetail:
+      type: object
+      properties:
+        waybill_number:
+          type: string
+          description: "YunExpress waybill number"
+        customer_order_number:
+          type: string
+          description: "Customer order number"
+        product_code:
+          type: string
+          description: "Logistics product code"
+        tracking_number:
+          type: string
+          description: "Tracking number"
+        platform_account_code:
+          type: string
+          description: "Platform account code"
+        pieces:
+          type: integer
+          description: "Number of pieces"
+        weight_unit:
+          type: string
+          description: "Weight unit"
+        size_unit:
+          type: string
+          description: "Dimension unit"
+        status:
+          type: string
+          description: |
+            Order status code:
+            - A: Forecast
+            - B: In warehouse
+            - C: Shipped
+            - D: Completed
+            - E: Cancelled
+            - Y: Abnormal
+        sensitive_type:
+          description: "Sensitive goods type"
+          oneOf:
+            - type: integer
+            - type: string
+        source_code:
+          type: string
+          description: "Source/channel code"
+        chargeWeight:
+          type: number
+          description: "Chargeable weight"
+        packages:
+          type: array
+          items:
+            $ref: "#/components/schemas/WaybillPackage"
+        receiver:
+          $ref: "#/components/schemas/ContactParty"
+        sender:
+          $ref: "#/components/schemas/ContactParty"
+        declaration_info:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeclarationItem"
+      additionalProperties: true
+
+    WaybillPackage:
+      type: object
+      properties:
+        weight:
+          type: number
+        length:
+          type: number
+        width:
+          type: number
+        height:
+          type: number
+        box_number:
+          type: string
+        reference_id:
+          type: string
+        ref_parcels:
+          type: array
+          items:
+            type: object
+            properties:
+              sku_code:
+                type: string
+              quantity:
+                type: integer
+      additionalProperties: true
+
+    # ── Sender ────────────────────────────────────────────────
+    ApiEnvelope_SenderResponse:
+      type: object
+      properties:
+        t:
+          oneOf:
+            - type: string
+            - type: integer
+        success:
+          type: boolean
+        code:
+          type: string
+        msg:
+          type: string
+        result:
+          $ref: "#/components/schemas/ContactParty"
+
+    # ── Last Mile Carrier ─────────────────────────────────────
+    ApiEnvelope_LastMileCarrierList:
+      type: object
+      properties:
+        t:
+          oneOf:
+            - type: string
+            - type: integer
+        success:
+          type: boolean
+        code:
+          type: string
+        msg:
+          type: string
+        result:
+          type: array
+          items:
+            type: object
+            properties:
+              waybill_number:
+                type: string
+              carrier_code:
+                type: string
+              carrier_name:
+                type: string
+            additionalProperties: true
+
+    # ── Label ─────────────────────────────────────────────────
+    ApiEnvelope_LabelResponse:
+      type: object
+      properties:
+        t:
+          oneOf:
+            - type: string
+            - type: integer
+        success:
+          type: boolean
+        code:
+          type: string
+        msg:
+          type: string
+        result:
+          $ref: "#/components/schemas/LabelResult"
+
+    LabelResult:
+      type: object
+      properties:
+        order_number:
+          type: string
+          description: "Order number"
+        url:
+          type: string
+          description: "Label download URL"
+          format: uri
+        label_type:
+          type: string
+          description: "Label format (e.g. PDF, PNG)"
+        label_string:
+          type: string
+          description: "Label content as string (base64 encoded if applicable)"
+      additionalProperties: true
+
+    # ── Tracking ──────────────────────────────────────────────
+    ApiEnvelope_TrackingResponse:
+      type: object
+      properties:
+        t:
+          oneOf:
+            - type: string
+            - type: integer
+        success:
+          type: boolean
+        code:
+          type: string
+        msg:
+          type: string
+        result:
+          $ref: "#/components/schemas/TrackingResult"
+
+    TrackingResult:
+      type: object
+      properties:
+        waybill_number:
+          type: string
+          description: "Waybill number"
+        track_info:
+          type: array
+          items:
+            type: object
+            properties:
+              track_events:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrackEvent"
+      additionalProperties: true
+
+    TrackEvent:
+      type: object
+      properties:
+        time_zone:
+          type: string
+          description: "Time zone offset"
+          example: "+8"
+        description:
+          type: string
+          description: "Event description"
+          example: "Parcel has been delivered"
+        event_date:
+          type: string
+          description: "Event date and time"
+          example: "2023-03-10 14:30:00"
+        location:
+          type: string
+          description: "Event location"
+          example: "New York"
+      additionalProperties: true
+
+    # ── Tracking Subscription ─────────────────────────────────
+    ApiEnvelope_TrackingSubscriptionDataList:
+      type: object
+      properties:
+        t:
+          oneOf:
+            - type: string
+            - type: integer
+        success:
+          type: boolean
+        code:
+          type: string
+        msg:
+          type: string
+        result:
+          type: array
+          items:
+            type: object
+            properties:
+              waybill_number:
+                type: string
+              product_code:
+                type: string
+              track_events:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrackEvent"
+            additionalProperties: true
+
+    # ── Pickup Points ─────────────────────────────────────────
+    ApiEnvelope_PickupPointList:
+      type: object
+      properties:
+        t:
+          oneOf:
+            - type: string
+            - type: integer
+        success:
+          type: boolean
+        code:
+          type: string
+        msg:
+          type: string
+        result:
+          type: array
+          items:
+            type: object
+            properties:
+              point_id:
+                type: string
+              point_name:
+                type: string
+              address:
+                type: string
+              city:
+                type: string
+              postal_code:
+                type: string
+              country_code:
+                type: string
+              carrier_code:
+                type: string
+              latitude:
+                type: number
+              longitude:
+                type: number
+            additionalProperties: true
+
+    # ── Price Trial ───────────────────────────────────────────
+    ApiEnvelope_PriceTrialList:
+      type: object
+      properties:
+        t:
+          oneOf:
+            - type: string
+            - type: integer
+        success:
+          type: boolean
+        code:
+          type: string
+        msg:
+          type: string
+        result:
+          type: array
+          items:
+            $ref: "#/components/schemas/PriceTrialItem"
+
+    PriceTrialItem:
+      type: object
+      properties:
+        product_code:
+          type: string
+          description: "Logistics product code"
+        product_name:
+          type: string
+          description: "Logistics product name"
+        fee_name:
+          type: string
+          description: "Fee name (e.g. E1, E2)"
+        calculate_amount:
+          type: number
+          description: "Calculated freight amount"
+        currency:
+          type: string
+          description: "Currency code"
+        interval_day:
+          type: string
+          description: "Estimated delivery time range (e.g. 3-8 days)"
+        price_name:
+          type: string
+          description: "Price tier name"
+        price_type:
+          type: string
+          description: "Price type code"
+        convert_currency:
+          type: string
+          description: "Converted currency"
+        rate:
+          type: number
+          description: "Exchange rate"
+        convert_amount:
+          type: number
+          description: "Converted amount"
+      additionalProperties: true
+
+    # ── Issue Release ─────────────────────────────────────────
+    IssueReleaseRequest:
+      type: object
+      required:
+        - waybill_number
+      properties:
+        waybill_number:
+          type: string
+          description: "Waybill number. Length: 1-50"
+          minLength: 1
+          maxLength: 50
+          example: "YT2426322ECO000024"
+        remark:
+          type: string
+          description: "Remark. Length: 0-255"
+          maxLength: 255
+        new_waybill_numbers:
+          type: array
+          description: |
+            New waybill numbers for split/merge operations.
+            Required for split (205) and merge (204) value-added services.
+            Max 100 items, each 1-50 characters.
+          maxItems: 100
+          items:
+            type: string
+            minLength: 1
+            maxLength: 50
+          example:
+            - "YT2229521272164446"
+            - "YT2229521272164447"
+        extra_codes:
+          type: array
+          description: |
+            Value-added service codes (split and merge are mutually exclusive):
+            - 203: Repack (更换包装)
+            - 204: Merge (合箱)
+            - 205: Split (分箱)
+            - 206: Reinforce (加固)
+          items:
+            type: string
+            enum:
+              - "203"
+              - "204"
+              - "205"
+              - "206"
+          example:
+            - "203"
+            - "205"
+
+    # ── Return Order ──────────────────────────────────────────
+    CreateReturnOrderRequest:
+      type: object
+      required:
+        - product_code
+        - handle_code
+        - warehouse_code
+        - send_type
+        - weight
+        - length
+        - width
+        - height
+        - sender
+        - goods_list
+      properties:
+        product_code:
+          type: string
+          description: "Return product code. Length: 1-50"
+          minLength: 1
+          maxLength: 50
+          example: "SEZXR"
+        handle_code:
+          type: string
+          description: "Handling method"
+          enum:
+            - RTZC
+            - RTQJ
+            - RTXH
+            - RTZY
+          example: "RTZY"
+        warehouse_code:
+          type: string
+          description: "Warehouse code. Length: 1-50"
+          minLength: 1
+          maxLength: 50
+          example: "CN0007"
+        send_type:
+          type: string
+          description: "Send type"
+          enum:
+            - RTZJ
+            - RTSM
+            - RTZD
+            - RTPUDO
+          example: "RTZD"
+        tracking_number:
+          type: string
+          description: "Tracking number (required for self-send/RTZJ). Length: 1-50"
+          maxLength: 50
+        send_service_name:
+          type: string
+          description: "Send service provider name. Length: 0-50"
+          maxLength: 50
+        weight:
+          type: number
+          description: "Package weight in KG. Range: 0.01-1000"
+          minimum: 0.01
+          maximum: 1000
+          example: 1.3
+        length:
+          type: number
+          description: "Package length in CM. Range: 0.1-1000"
+          minimum: 0.1
+          maximum: 1000
+          example: 10
+        width:
+          type: number
+          description: "Package width in CM. Range: 0.1-1000"
+          minimum: 0.1
+          maximum: 1000
+          example: 10
+        height:
+          type: number
+          description: "Package height in CM. Range: 0.1-1000"
+          minimum: 0.1
+          maximum: 1000
+          example: 10
+        extra_services:
+          type: array
+          description: |
+            Extra service codes:
+            - RT01, P0, RT05, RT03, B6, RT06
+            - RT06 (forwarding service) is required when handle_code is RTZY
+          items:
+            type: string
+          example:
+            - "P0"
+            - "RT06"
+        sender:
+          type: object
+          description: "Return sender information"
+          required:
+            - name
+            - phone_number
+            - country_code
+            - province
+            - city
+            - address_lines
+            - postal_code
+          properties:
+            name:
+              type: string
+              description: "Sender name. Max length: 50"
+              maxLength: 50
+            phone_number:
+              type: string
+              description: "Sender phone number. Max length: 50"
+              maxLength: 50
+            country_code:
+              type: string
+              description: "Country code (ISO 3166-1 alpha-2). Max length: 20"
+              maxLength: 20
+            province:
+              type: string
+              description: "Province/state. Max length: 50"
+              maxLength: 50
+            city:
+              type: string
+              description: "City. Max length: 50"
+              maxLength: 50
+            address_lines:
+              type: string
+              description: "Detailed address. Max length: 200"
+              maxLength: 200
+            address_lines1:
+              type: string
+              description: "Address line 2. Max length: 200"
+              maxLength: 200
+            address_lines2:
+              type: string
+              description: "Address line 3. Max length: 200"
+              maxLength: 200
+            postal_code:
+              type: string
+              description: "Postal code. Max length: 50"
+              maxLength: 50
+        goods_list:
+          type: array
+          description: "Goods/item list"
+          minItems: 1
+          items:
+            type: object
+            properties:
+              name_local:
+                type: string
+                description: "Item name in local language"
+              name_en:
+                type: string
+                description: "Item name in English"
+              quantity:
+                type: integer
+                description: "Quantity"
+            additionalProperties: true
+        label_type:
+          type: string
+          description: "Label format type"
+          enum:
+            - PNG
+            - PDF
+            - ZPL
+          default: PDF
+        receiver:
+          type: object
+          description: "Forwarding recipient info (required when handle_code is RTZY)"
+          properties:
+            name:
+              type: string
+            company:
+              type: string
+            phone_number:
+              type: string
+            country_code:
+              type: string
+            province:
+              type: string
+            city:
+              type: string
+            address_lines:
+              type: string
+            address_lines1:
+              type: string
+            address_lines2:
+              type: string
+            postal_code:
+              type: string
+            email:
+              type: string
+              format: email
+          additionalProperties: true
+        ioss_number:
+          type: string
+          description: "IOSS code (required for cross-border EU destinations)"
+        vat_number:
+          type: string
+          description: "VAT code (required for BR/UK/CL/CO destinations)"
+        eori_number:
+          type: string
+          description: "EORI code (required for UK destinations)"
+        customer_order_no:
+          type: string
+          description: "Customer order number"
+        send_service_code:
+          type: string
+          description: "Send service provider code"
+
+    ApiEnvelope_CreateReturnOrderResponse:
+      type: object
+      properties:
+        t:
+          oneOf:
+            - type: string
+            - type: integer
+        success:
+          type: boolean
+        code:
+          type: string
+        msg:
+          type: string
+        result:
+          $ref: "#/components/schemas/CreateReturnOrderResponse"
+
+    CreateReturnOrderResponse:
+      type: object
+      properties:
+        order_code:
+          type: string
+          description: "Return order code"
+        tracking_number:
+          type: string
+          description: "Return tracking number"
+        label_urls:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: "Label download URLs"
+        website_url:
+          type: string
+          description: "Management website URL"
+          format: uri
+        free_days:
+          type: integer
+          description: "Free storage days at warehouse"
+      additionalProperties: true
+
+    # ── Fee Query ─────────────────────────────────────────────
+    ApiEnvelope_BillingDetailList:
+      type: object
+      properties:
+        t:
+          oneOf:
+            - type: string
+            - type: integer
+        success:
+          type: boolean
+        code:
+          type: string
+        msg:
+          type: string
+        result:
+          type: array
+          items:
+            type: object
+            properties:
+              waybill_number:
+                type: string
+              fee_name:
+                type: string
+              fee_amount:
+                type: number
+              currency:
+                type: string
+              billing_date:
+                type: string
+            additionalProperties: true
+
+    ApiEnvelope_FreightDetailResponse:
+      type: object
+      properties:
+        t:
+          oneOf:
+            - type: string
+            - type: integer
+        success:
+          type: boolean
+        code:
+          type: string
+        msg:
+          type: string
+        result:
+          type: object
+          properties:
+            waybill_number:
+              type: string
+            total_amount:
+              type: number
+            currency:
+              type: string
+            fee_details:
+              type: array
+              items:
+                type: object
+                properties:
+                  fee_name:
+                    type: string
+                  fee_amount:
+                    type: number
+                additionalProperties: true
+          additionalProperties: true
+
+    # ── Basic ─────────────────────────────────────────────────
+    ApiEnvelope_CountryList:
+      type: object
+      properties:
+        t:
+          oneOf:
+            - type: string
+            - type: integer
+        success:
+          type: boolean
+        code:
+          type: string
+        msg:
+          type: string
+        result:
+          type: array
+          items:
+            type: object
+            properties:
+              country_code:
+                type: string
+                description: "ISO 3166-1 alpha-2 country code"
+              country_name:
+                type: string
+                description: "Country name"
+              country_name_en:
+                type: string
+                description: "Country name in English"
+            additionalProperties: true
+
+    ApiEnvelope_ProductList:
+      type: object
+      properties:
+        t:
+          oneOf:
+            - type: string
+            - type: integer
+        success:
+          type: boolean
+        code:
+          type: string
+        msg:
+          type: string
+        result:
+          type: array
+          items:
+            type: object
+            properties:
+              product_code:
+                type: string
+                description: "Product code"
+              product_name:
+                type: string
+                description: "Product name"
+              product_group_code:
+                type: string
+                description: "Product group code"
+            additionalProperties: true
