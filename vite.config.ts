@@ -7,6 +7,10 @@ export default defineConfig({
   pack: {
     clean: true,
     format: ["esm", "cjs"],
+    entry: {
+      index: "src/index.ts",
+      cli: "src/cli/index.ts",
+    },
     dts: {
       tsgo: true,
     },

@@ -154,6 +154,122 @@ console.log(response.data);
 - `RequestExecutionError`: network, timeout, or local validation failures
 - `UpstreamApiError`: non-auth upstream responses or business envelope failures
 
+## CLI
+
+The SDK ships a `yunexpress` CLI for quick terminal access to all API resources.
+
+### Setup
+
+After installing the package, the `yunexpress` binary is available:
+
+```bash
+# Or run directly from the repo build output
+node dist/cli.mjs --help
+```
+
+### Authentication
+
+Auth credentials are resolved in order: CLI flags → environment variables → config file.
+
+**Environment variables:**
+
+```bash
+export YUNEXPRESS_APP_ID=your-app-id
+export YUNEXPRESS_API_KEY=your-api-key
+export YUNEXPRESS_ENVIRONMENT=production   # or "sandbox"
+# Optional:
+export YUNEXPRESS_ACCESS_TOKEN=...
+export YUNEXPRESS_SOURCE_KEY=...
+export YUNEXPRESS_BASE_URL=https://custom.endpoint.com
+```
+
+**Config file** (`~/.yunexpressrc.json`):
+
+```json
+{
+  "appId": "your-app-id",
+  "apiKey": "your-api-key",
+  "environment": "production"
+}
+```
+
+**CLI flags** (override everything):
+
+```bash
+yunexpress --app-id xxx --api-key xxx --environment production basic countries
+```
+
+### Commands
+
+```
+yunexpress orders          Manage orders
+yunexpress tracking        Tracking operations
+yunexpress labels          Label and document operations
+yunexpress pricing         Pricing operations
+yunexpress exceptions      Exception handling operations
+yunexpress returns         Return order operations
+yunexpress billing         Billing operations
+yunexpress basic           Basic data lookups
+```
+
+Use `yunexpress <command> --help` to see subcommands and options.
+
+### Examples
+
+```bash
+# List all supported countries
+yunexpress basic countries
+
+# List all available products
+yunexpress basic products
+
+# Get waybill detail
+yunexpress orders get --order-number YT2231431267000001
+
+# Get tracking info
+yunexpress tracking get --order-number YT2231431267000001
+
+# Get a price estimate
+yunexpress pricing trial --country-code US --weight 0.5 --weight-unit KG
+
+# Get billing detail with date range
+yunexpress billing detail --start-date 2024-01-01 --end-date 2024-12-31
+
+# Get a shipping label
+yunexpress labels get --order-number YT2231431267000001
+
+# Cancel an order
+yunexpress orders cancel --waybill-number YT2231431267000001
+
+# Create an order from a JSON file
+yunexpress orders create --data @payload.json
+
+# Create an order from inline JSON
+yunexpress orders create --data '{"productCode":"STANDARD","customerOrderNumber":"ORD-001",...}'
+
+# Pipe JSON from stdin
+cat payload.json | yunexpress orders create --data -
+
+# Create a return order
+yunexpress returns create --data @return-payload.json
+
+# Release an exception
+yunexpress exceptions release --waybill-number YT123 --remark "Resolved"
+
+# Subscribe to tracking by waybill numbers
+yunexpress tracking subscribe-waybill --waybill-numbers YT001,YT002,YT003
+```
+
+### Data Input
+
+For commands with complex payloads (`orders create`, `returns create`), use the `--data` flag:
+
+| Format      | Example                          |
+| ----------- | -------------------------------- |
+| Inline JSON | `--data '{"productCode":"..."}'` |
+| File        | `--data @payload.json`           |
+| Stdin       | `--data -` (pipe via stdin)      |
+
 ## Known Limitations
 
 - Sandbox token acquisition is still account-specific. Production auto-exchange is built in, but sandbox integrations may still need explicit `accessToken` or `tokenProvider`.

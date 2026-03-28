@@ -10,6 +10,9 @@
     "yunexpress"
   ],
   "license": "MIT",
+  "bin": {
+    "yunexpress": "./dist/cli.mjs"
+  },
   "files": [
     "dist",
     "README.md"
@@ -23,6 +26,10 @@
     ".": {
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
+    },
+    "./cli": {
+      "import": "./dist/cli.mjs",
+      "require": "./dist/cli.cjs"
     },
     "./package.json": "./package.json"
   },
@@ -40,6 +47,9 @@
     "pack:check": "vp pm pack --dry-run",
     "prepublishOnly": "vp run build",
     "prepare": "vp config"
+  },
+  "dependencies": {
+    "citty": "^0.2.1"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
