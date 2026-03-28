@@ -82,7 +82,12 @@ function resolveClientOptions(options: YunExpressClientOptions): ResolvedYunExpr
     );
   }
 
-  const authProvider = options.authProvider ?? createAuthProvider(environment, options.auth);
+  const authProvider =
+    options.authProvider ??
+    createAuthProvider(environment, options.auth, {
+      fetch: fetchImplementation,
+      logger: options.logger,
+    });
 
   return {
     environment,

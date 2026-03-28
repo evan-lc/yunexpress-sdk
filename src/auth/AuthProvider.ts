@@ -3,9 +3,12 @@ import type {
   SandboxAuthOptions,
   YunExpressAuthOptions,
   YunExpressEnvironment,
+  YunExpressLogger,
 } from "../config/types.ts";
+import type { FetchLike } from "../http/transport.ts";
 import { ProductionAuthProvider } from "./providers/ProductionAuthProvider.ts";
 import { SandboxAuthProvider } from "./providers/SandboxAuthProvider.ts";
+import { HmacSha256RequestSigner } from "./signing/HmacSha256RequestSigner.ts";
 import { NoopRequestSigner, type RequestSigner } from "./signing/RequestSigner.ts";
 
 export interface AuthHeaders extends Record<string, string> {
@@ -37,11 +40,17 @@ export interface AuthProvider {
   getHeaders(context: AuthRequestContext): Promise<AuthHeaders>;
 }
 
+export interface CreateAuthProviderDependencies {
+  fetch?: FetchLike;
+  logger?: YunExpressLogger;
+}
+
 const defaultSigner = new NoopRequestSigner();
 
 export function createAuthProvider(
   environment: YunExpressEnvironment,
   auth: YunExpressAuthOptions,
+  dependencies: CreateAuthProviderDependencies = {},
 ): AuthProvider {
   if (auth.kind !== environment) {
     throw new TypeError(`Auth kind ${auth.kind} does not match environment ${environment}.`);
@@ -51,7 +60,7 @@ export function createAuthProvider(
     case "sandbox":
       return new SandboxAuthProvider(auth);
     case "production":
-      return new ProductionAuthProvider(auth);
+      return new ProductionAuthProvider(auth, dependencies);
     default:
       throw new TypeError("Unsupported YunExpress auth configuration.");
   }
@@ -60,6 +69,7 @@ export function createAuthProvider(
 export async function resolveAccessToken(
   options: Pick<SandboxAuthOptions | ProductionAuthOptions, "accessToken" | "tokenProvider">,
   context: AccessTokenContext,
+  fallbackProvider?: AccessTokenProvider,
 ): Promise<string> {
   if (options.accessToken) {
     return options.accessToken;
@@ -67,6 +77,10 @@ export async function resolveAccessToken(
 
   if (options.tokenProvider) {
     return await options.tokenProvider(context);
+  }
+
+  if (fallbackProvider) {
+    return await fallbackProvider(context);
   }
 
   throw new TypeError("An access token or token provider is required.");
@@ -83,8 +97,8 @@ export async function buildAuthHeaders({
   signer?: RequestSigner;
   acceptLanguage?: string;
 }): Promise<AuthHeaders> {
-  const date = new Date().toISOString();
-  const sign = await (signer ?? defaultSigner).sign({
+  const date = String(Date.now());
+  const sign = await resolveSigner(context, signer).sign({
     ...context,
     token,
     date,
@@ -101,4 +115,16 @@ export async function buildAuthHeaders({
   }
 
   return headers;
+}
+
+function resolveSigner(context: AccessTokenContext, signer?: RequestSigner): RequestSigner {
+  if (signer) {
+    return signer;
+  }
+
+  if (context.apiKey) {
+    return new HmacSha256RequestSigner(context.apiKey);
+  }
+
+  return defaultSigner;
 }

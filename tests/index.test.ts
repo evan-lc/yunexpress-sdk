@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { describe, expect, test, vi } from "vite-plus/test";
 import {
   NoopRequestSigner,
@@ -7,6 +8,7 @@ import {
   YunExpressClient,
   type CreatePackageRequest,
   type FetchLike,
+  type GetWaybillDetailResponse,
   type RequestSigner,
 } from "../src/index.ts";
 
@@ -17,9 +19,7 @@ describe("YunExpressClient", () => {
     };
 
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      expect(toUrlString(input)).toBe(
-        "https://sandbox-openapi.yunexpress.com/v1/order/package/create",
-      );
+      expect(toUrlString(input)).toBe("https://openapi-sbx.yunexpress.cn/v1/order/package/create");
 
       const headers = new Headers(init?.headers);
       expect(headers.get("token")).toBe("sandbox-token");
@@ -117,6 +117,129 @@ describe("YunExpressClient", () => {
     expect(response.data.items).toEqual([]);
   });
 
+  test("production auth exchanges and caches access tokens automatically", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(toUrlString(input));
+
+      if (url.pathname === "/openapi/oauth2/token") {
+        expect(init?.method).toBe("POST");
+
+        if (typeof init?.body !== "string") {
+          throw new TypeError("Expected a JSON token request body.");
+        }
+
+        expect(JSON.parse(init.body)).toEqual({
+          grantType: "client_credentials",
+          appId: "app-1",
+          appSecret: "secret-1",
+          sourceKey: "source-1",
+        });
+
+        return jsonResponse({
+          accessToken: "auto-token",
+          expiresIn: 7200,
+        });
+      }
+
+      expect(url.origin).toBe("https://openapi.yunexpress.cn");
+      expect(url.pathname).toBe("/v1/order/info/get");
+      expect(url.searchParams.get("order_number")).toBe("YT2231431267000001");
+
+      const headers = new Headers(init?.headers);
+      const date = headers.get("date");
+
+      expect(headers.get("token")).toBe("auto-token");
+      expect(date).toMatch(/^\d{13}$/);
+      expect(headers.get("sign")).toBe(
+        createHmac("sha256", "secret-1")
+          .update(`date=${date}&method=GET&uri=/v1/order/info/get`)
+          .digest("base64"),
+      );
+
+      return jsonResponse({
+        success: true,
+        result: {
+          waybill_number: "YT2233621266010029",
+        },
+      });
+    });
+
+    const client = new YunExpressClient({
+      auth: {
+        kind: "production",
+        appId: "app-1",
+        apiKey: "secret-1",
+        sourceKey: "source-1",
+      },
+      fetch: fetchMock as FetchLike,
+    });
+
+    await client.orders.getWaybillDetail({
+      orderNumber: "YT2231431267000001",
+    });
+    await client.orders.getWaybillDetail({
+      orderNumber: "YT2231431267000001",
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  test("orders.getWaybillDetail maps orderNumber into the documented query parameter", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(toUrlString(input));
+      expect(url.origin).toBe("https://openapi.yunexpress.cn");
+      expect(url.pathname).toBe("/v1/order/info/get");
+      expect(url.searchParams.get("order_number")).toBe("YT2231431267000001");
+
+      const headers = new Headers(init?.headers);
+      expect(headers.get("token")).toBe("prod-token");
+      expect(init?.method).toBe("GET");
+
+      return jsonResponse({
+        request_id: "req-waybill",
+        success: true,
+        result: {
+          waybill_number: "YT2233621266010029",
+          customer_order_number: "ORDER-DETAIL-1",
+          product_code: "THZXR",
+          status: "C",
+          packages: [
+            {
+              weight: 2.2,
+              length: 1,
+              width: 1,
+              height: 1,
+            },
+          ],
+          receiver: {
+            country_code: "BR",
+            first_name: "Jodie Langton",
+            address_lines: ["L", "Address273", "11112"],
+          },
+        } satisfies GetWaybillDetailResponse,
+      });
+    });
+
+    const client = new YunExpressClient({
+      auth: {
+        kind: "production",
+        appId: "app-1",
+        apiKey: "secret-1",
+        accessToken: "prod-token",
+        signer: new NoopRequestSigner(),
+      },
+      fetch: fetchMock as FetchLike,
+    });
+
+    const response = await client.orders.getWaybillDetail({
+      orderNumber: "YT2231431267000001",
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(response.data.waybill_number).toBe("YT2233621266010029");
+    expect(response.data.receiver?.country_code).toBe("BR");
+  });
+
   test("transport retries idempotent POST requests on retryable status codes", async () => {
     const fetchMock = vi
       .fn()
@@ -183,6 +306,31 @@ describe("YunExpressClient", () => {
           packages: [{ weight: 1.2345 }],
         }),
       );
+    } catch (caught) {
+      error = caught;
+    }
+
+    expect(error).toBeInstanceOf(RequestExecutionError);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test("orders.getWaybillDetail validates order number length before sending", async () => {
+    const fetchMock = vi.fn();
+
+    const client = new YunExpressClient({
+      auth: {
+        kind: "sandbox",
+        accessToken: "sandbox-token",
+        signer: new NoopRequestSigner(),
+      },
+      fetch: fetchMock as unknown as FetchLike,
+    });
+
+    let error: unknown;
+    try {
+      await client.orders.getWaybillDetail({
+        orderNumber: " ".repeat(3),
+      });
     } catch (caught) {
       error = caught;
     }

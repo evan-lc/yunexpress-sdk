@@ -76,6 +76,80 @@ export type CreatePackageResponse = {
   shipperBoxs?: Array<Record<string, unknown>>;
 } & Record<string, unknown>;
 
+export interface GetWaybillDetailRequest {
+  orderNumber: string;
+}
+
+export type WaybillQueryStatus = string;
+
+export type WaybillRefParcel = {
+  sku_code?: string;
+  quantity?: number;
+} & Record<string, unknown>;
+
+export type WaybillPackage = {
+  weight?: number;
+  length?: number;
+  width?: number;
+  height?: number;
+  box_number?: string;
+  reference_id?: string;
+  ref_parcels?: WaybillRefParcel[];
+} & Record<string, unknown>;
+
+export type WaybillParty = {
+  first_name?: string;
+  last_name?: string;
+  country_code?: string;
+  province?: string;
+  city?: string;
+  address_lines?: Array<string | null>;
+  postal_code?: string;
+  phone_number?: string;
+  company?: string;
+  email?: string | null;
+  certificate_code?: string | null;
+  certificate_type?: string | null;
+} & Record<string, unknown>;
+
+export type WaybillDeclarationItem = {
+  quantity?: number;
+  unit_price?: number;
+  unit_weight?: number;
+  name_local?: string;
+  sku_code?: string;
+  name_en?: string;
+  hs_code?: string;
+  sales_url?: string;
+  currency?: string;
+  material?: string | null;
+  purpose?: string | null;
+  brand?: string | null;
+  spec?: string | null;
+  model?: string | null;
+  remark?: string;
+  attachment?: string | null;
+} & Record<string, unknown>;
+
+export type GetWaybillDetailResponse = {
+  waybill_number?: string;
+  customer_order_number?: string;
+  product_code?: string;
+  tracking_number?: string;
+  platform_account_code?: string;
+  pieces?: number;
+  weight_unit?: string;
+  size_unit?: string;
+  status?: WaybillQueryStatus;
+  sensitive_type?: number | string;
+  source_code?: string;
+  chargeWeight?: number;
+  packages?: WaybillPackage[];
+  receiver?: WaybillParty;
+  sender?: WaybillParty;
+  declaration_info?: WaybillDeclarationItem[];
+} & Record<string, unknown>;
+
 export function assertValidCreatePackageRequest(input: CreatePackageRequest): void {
   if (!input.productCode.trim()) {
     throw validationError("productCode is required.");
@@ -96,6 +170,18 @@ export function assertValidCreatePackageRequest(input: CreatePackageRequest): vo
   input.packages.forEach((packageEntry, index) => {
     validatePackageWeight(packageEntry.weight, index);
   });
+}
+
+export function assertValidGetWaybillDetailRequest(input: GetWaybillDetailRequest): void {
+  const orderNumber = input.orderNumber.trim();
+
+  if (!orderNumber) {
+    throw validationError("orderNumber is required.");
+  }
+
+  if (orderNumber.length > 50) {
+    throw validationError("orderNumber must be between 1 and 50 characters.");
+  }
 }
 
 function validatePackageWeight(weight: number, index: number): void {

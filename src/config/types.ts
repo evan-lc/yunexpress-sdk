@@ -10,8 +10,8 @@ import type {
 } from "../http/transport.ts";
 
 export const DEFAULT_BASE_URLS = {
-  sandbox: "https://sandbox-openapi.yunexpress.com",
-  production: "https://openapi.yunexpress.com",
+  sandbox: "https://openapi-sbx.yunexpress.cn",
+  production: "https://openapi.yunexpress.cn",
 } as const;
 
 export type YunExpressEnvironment = keyof typeof DEFAULT_BASE_URLS;
@@ -56,6 +56,10 @@ type ProductionTokenSource =
   | {
       tokenProvider: AccessTokenProvider;
       accessToken?: never;
+    }
+  | {
+      accessToken?: never;
+      tokenProvider?: never;
     };
 
 export type SandboxAuthOptions = AuthOptionsBase &
@@ -70,6 +74,10 @@ export type ProductionAuthOptions = AuthOptionsBase &
     kind: "production";
     appId: string;
     apiKey: string;
+    sourceKey?: string;
+    tokenEndpoint?: string;
+    tokenHeaders?: Record<string, string>;
+    tokenRefreshBufferMs?: number;
   };
 
 export type YunExpressAuthOptions = SandboxAuthOptions | ProductionAuthOptions;

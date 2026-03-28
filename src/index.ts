@@ -15,12 +15,16 @@ export { DEFAULT_BASE_URLS } from "./config/types.ts";
 export {
   buildAuthHeaders,
   createAuthProvider,
+  type CreateAuthProviderDependencies,
   type AccessTokenContext,
   type AccessTokenProvider,
   type AuthHeaders,
   type AuthProvider,
   type AuthRequestContext,
 } from "./auth/AuthProvider.ts";
+export { createOAuthAccessTokenProvider } from "./auth/token/createOAuthAccessTokenProvider.ts";
+export type { OAuthTokenProviderOptions } from "./auth/token/createOAuthAccessTokenProvider.ts";
+export { HmacSha256RequestSigner } from "./auth/signing/HmacSha256RequestSigner.ts";
 export { NoopRequestSigner } from "./auth/signing/RequestSigner.ts";
 export type { RequestSigner, SignerContext } from "./auth/signing/RequestSigner.ts";
 
@@ -53,11 +57,21 @@ export type {
   CreatePackageRequest,
   CreatePackageResponse,
   DeclarationItem,
+  GetWaybillDetailRequest,
+  GetWaybillDetailResponse,
   PackageDimensions,
   SizeUnit,
+  WaybillDeclarationItem,
+  WaybillPackage,
+  WaybillParty,
+  WaybillQueryStatus,
+  WaybillRefParcel,
   WeightUnit,
 } from "./resources/orders/types.ts";
-export { assertValidCreatePackageRequest } from "./resources/orders/types.ts";
+export {
+  assertValidCreatePackageRequest,
+  assertValidGetWaybillDetailRequest,
+} from "./resources/orders/types.ts";
 
 export {
   AuthenticationError,
