@@ -481,7 +481,7 @@ paths:
                           event_date: "2023-03-10 14:30:00"
                           location: "New York"
 
-  /v1/track-service/subscription/waybill/add:
+  /v1/track-service/subscribe-by-order:
     post:
       operationId: subscribeTrackingByWaybill
       summary: Subscribe tracking by waybill (按运单号订阅轨迹)
@@ -498,6 +498,7 @@ paths:
               type: object
               required:
                 - waybill_numbers
+                - subscribe_type
               properties:
                 waybill_numbers:
                   type: array
@@ -505,9 +506,25 @@ paths:
                   maxItems: 50
                   items:
                     type: string
-                subscription_mode:
+                subscribe_type:
                   type: string
                   description: "Tracking subscription mode"
+                  enum:
+                    - A
+                    - F
+                    - L
+                    - N
+                    - EL
+                    - ANC
+                query_type:
+                  type: array
+                  description: "Query type filters"
+                  items:
+                    type: string
+                    enum:
+                      - C
+                      - Y
+                      - T
       responses:
         "200":
           description: Successful response
@@ -516,7 +533,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiEnvelope_Empty"
 
-  /v1/track-service/subscription/waybill/cancel:
+  /v1/track-service/unsubscribe-by-order:
     post:
       operationId: cancelTrackingSubscriptionByWaybill
       summary: Cancel tracking subscription by waybill (按运单号取消轨迹订阅)
@@ -547,7 +564,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiEnvelope_Empty"
 
-  /v1/track-service/subscription/waybill/get:
+  /v1/track-service/subscribe-by-order/get:
     get:
       operationId: getTrackingSubscriptionByWaybill
       summary: Get tracking subscription data by waybill (获取按运单号轨迹订阅的数据)
@@ -571,7 +588,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiEnvelope_TrackingSubscriptionDataList"
 
-  /v1/track-service/subscription/product/add:
+  /v1/track-service/subscribe-by-shipping:
     post:
       operationId: subscribeTrackingByProduct
       summary: Subscribe tracking by product (按物流产品订阅轨迹)
@@ -587,17 +604,43 @@ paths:
             schema:
               type: object
               required:
-                - product_codes
+                - subscribe_products
+                - subscribe_type
               properties:
-                product_codes:
+                subscribe_products:
                   type: array
-                  description: "Logistics product codes to subscribe. Max 50 items."
+                  description: "Logistics product subscriptions to subscribe. Max 50 items."
                   maxItems: 50
                   items:
-                    type: string
-                subscription_mode:
+                    type: object
+                    required:
+                      - product_code
+                    properties:
+                      product_code:
+                        type: string
+                      country_codes:
+                        type: array
+                        items:
+                          type: string
+                subscribe_type:
                   type: string
                   description: "Tracking subscription mode"
+                  enum:
+                    - A
+                    - F
+                    - L
+                    - N
+                    - EL
+                    - ANC
+                query_type:
+                  type: array
+                  description: "Query type filters"
+                  items:
+                    type: string
+                    enum:
+                      - C
+                      - Y
+                      - T
       responses:
         "200":
           description: Successful response
@@ -606,7 +649,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiEnvelope_Empty"
 
-  /v1/track-service/subscription/product/cancel:
+  /v1/track-service/unsubscribe-by-shipping:
     post:
       operationId: cancelTrackingSubscriptionByProduct
       summary: Cancel tracking subscription by product (按物流产品取消轨迹订阅)
@@ -621,14 +664,23 @@ paths:
             schema:
               type: object
               required:
-                - product_codes
+                - subscribe_products
               properties:
-                product_codes:
+                subscribe_products:
                   type: array
-                  description: "Product codes to unsubscribe. Max 50 items."
+                  description: "Product subscriptions to unsubscribe. Max 50 items."
                   maxItems: 50
                   items:
-                    type: string
+                    type: object
+                    required:
+                      - product_code
+                    properties:
+                      product_code:
+                        type: string
+                      country_codes:
+                        type: array
+                        items:
+                          type: string
       responses:
         "200":
           description: Successful response
@@ -637,7 +689,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiEnvelope_Empty"
 
-  /v1/track-service/subscription/product/get:
+  /v1/track-service/subscribe-by-shipping/get:
     get:
       operationId: getTrackingSubscriptionByProduct
       summary: Get tracking subscription data by product (获取物流产品订阅轨迹的数据)
@@ -1023,7 +1075,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiEnvelope_BillingDetailList"
 
-  /v1/freight/detail/get:
+  /v1/order/fee-details/get:
     get:
       operationId: getFreightDetail
       summary: Get freight charge details (获取运单扣费详情)
@@ -1047,7 +1099,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiEnvelope_FreightDetailResponse"
 
-  /v1/basic/country/get:
+  /v1/basic-data/countries/getlist:
     get:
       operationId: getCountryCodes
       summary: Query country codes (查询国家简码)
@@ -1062,13 +1114,22 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiEnvelope_CountryList"
 
-  /v1/basic/product/get:
+  /v1/basic-data/products/getlist:
     get:
       operationId: getProducts
       summary: Query logistics products (查询物流产品)
       description: Query available logistics product codes and information.
       tags:
         - Basic
+      parameters:
+        - name: country_code
+          in: query
+          required: false
+          description: "Optional country/region ISO 2-letter code filter"
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 2
       responses:
         "200":
           description: Successful response
@@ -1740,19 +1801,48 @@ components:
         msg:
           type: string
         result:
+          type: object
+          properties:
+            order_subscribe_info:
+              type: array
+              items:
+                $ref: "#/components/schemas/TrackingSubscriptionDataItem"
+            ProductSubscribe:
+              type: array
+              items:
+                $ref: "#/components/schemas/TrackingSubscriptionDataItem"
+          additionalProperties: true
+
+    TrackingSubscriptionDataItem:
+      type: object
+      properties:
+        waybill_number:
+          type: string
+        product_code:
+          type: string
+        tracking_number:
+          type: string
+        customer_order_id:
+          type: string
+        subscribe_type:
+          type: string
+        subscribe_Type:
+          type: string
+        query_type:
           type: array
           items:
-            type: object
-            properties:
-              waybill_number:
-                type: string
-              product_code:
-                type: string
-              track_events:
-                type: array
-                items:
-                  $ref: "#/components/schemas/TrackEvent"
-            additionalProperties: true
+            type: string
+        queryNumber:
+          type: string
+        country_Codes:
+          type: string
+        subscribe_time:
+          type: string
+        track_events:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrackEvent"
+      additionalProperties: true
 
     # ── Pickup Points ─────────────────────────────────────────
     ApiEnvelope_PickupPointList:
@@ -2243,7 +2333,15 @@ components:
                 properties:
                   fee_name:
                     type: string
-                  fee_amount:
+                  amount:
+                    type: number
+                  currency:
+                    type: string
+                  rate:
+                    type: number
+                  deduction_currency:
+                    type: string
+                  deduction_amount:
                     type: number
                 additionalProperties: true
           additionalProperties: true
@@ -2263,20 +2361,29 @@ components:
         msg:
           type: string
         result:
-          type: array
-          items:
-            type: object
-            properties:
-              country_code:
-                type: string
-                description: "ISO 3166-1 alpha-2 country code"
-              country_name:
-                type: string
-                description: "Country name"
-              country_name_en:
-                type: string
-                description: "Country name in English"
-            additionalProperties: true
+          type: object
+          properties:
+            list:
+              type: array
+              items:
+                type: object
+                properties:
+                  country_code:
+                    type: string
+                    description: "ISO 3166-1 alpha-2 country code"
+                  country_name:
+                    type: string
+                    description: "Country name"
+                  country_name_en:
+                    type: string
+                    description: "Country name in English"
+                  country_code_three:
+                    type: string
+                  country_number:
+                    type: integer
+                  international_code:
+                    type: string
+                additionalProperties: true
 
     ApiEnvelope_ProductList:
       type: object
@@ -2291,7 +2398,7 @@ components:
           type: string
         msg:
           type: string
-        result:
+        detail:
           type: array
           items:
             type: object

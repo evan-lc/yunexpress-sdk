@@ -4,6 +4,9 @@ export interface GetTrackingInfoRequest {
   orderNumber: string;
 }
 
+export type TrackingSubscribeType = "A" | "F" | "L" | "N" | "EL" | "ANC";
+export type TrackingQueryType = "C" | "Y" | "T";
+
 export type TrackEvent = {
   time_zone?: string;
   description?: string;
@@ -20,7 +23,9 @@ export type TrackingResult = {
 
 export interface SubscribeTrackingByWaybillRequest {
   waybillNumbers: string[];
-  subscriptionMode?: string;
+  subscribeType?: TrackingSubscribeType;
+  subscriptionMode?: TrackingSubscribeType;
+  queryTypes?: TrackingQueryType[];
 }
 
 export interface CancelTrackingSubscriptionByWaybillRequest {
@@ -31,13 +36,22 @@ export interface GetTrackingSubscriptionByWaybillRequest {
   waybillNumbers: string[];
 }
 
+export interface TrackingSubscribeProduct {
+  productCode: string;
+  countryCodes?: string[];
+}
+
 export interface SubscribeTrackingByProductRequest {
-  productCodes: string[];
-  subscriptionMode?: string;
+  subscribeProducts?: TrackingSubscribeProduct[];
+  productCodes?: string[];
+  subscribeType?: TrackingSubscribeType;
+  subscriptionMode?: TrackingSubscribeType;
+  queryTypes?: TrackingQueryType[];
 }
 
 export interface CancelTrackingSubscriptionByProductRequest {
-  productCodes: string[];
+  subscribeProducts?: TrackingSubscribeProduct[];
+  productCodes?: string[];
 }
 
 export interface GetTrackingSubscriptionByProductRequest {
@@ -47,6 +61,14 @@ export interface GetTrackingSubscriptionByProductRequest {
 export type TrackingSubscriptionDataItem = {
   waybill_number?: string;
   product_code?: string;
+  tracking_number?: string;
+  customer_order_id?: string;
+  subscribe_type?: string;
+  subscribe_Type?: string;
+  query_type?: string[];
+  queryNumber?: string;
+  country_Codes?: string;
+  subscribe_time?: string;
   track_events?: TrackEvent[];
 } & Record<string, unknown>;
 

@@ -146,6 +146,7 @@ export type {
 export type {
   CountryItem,
   GetCountryCodesResponse,
+  GetProductsRequest,
   ProductItem,
   GetProductsResponse,
 } from "./resources/basic/types.ts";

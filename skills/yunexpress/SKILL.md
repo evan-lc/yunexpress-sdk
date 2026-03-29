@@ -162,8 +162,8 @@ yunexpress tracking get --order-number YT2231431267000001
 **Subscribe to tracking updates** (push notifications for status changes):
 
 ```bash
-yunexpress tracking subscribe-waybill --waybill-numbers YT001,YT002 --subscription-mode 1
-yunexpress tracking subscribe-product --product-codes STANDARD,EXPRESS --subscription-mode 1
+yunexpress tracking subscribe-waybill --waybill-numbers YT001,YT002 --subscribe-type L --query-types Y
+yunexpress tracking subscribe-product --product-codes STANDARD,EXPRESS --subscribe-type N --query-types C,T
 ```
 
 **Cancel tracking subscription:**
@@ -268,7 +268,7 @@ yunexpress basic countries
 **List available shipping products:**
 
 ```bash
-yunexpress basic products
+yunexpress basic products --country-code US
 ```
 
 These are useful reference commands — run them when the user needs to know which country codes or product codes to use.

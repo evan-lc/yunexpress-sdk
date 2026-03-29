@@ -44,7 +44,7 @@ export class BillingResource extends ResourceNamespace {
     return this.request<GetFreightDetailResponse>({
       ...options,
       method: "GET",
-      path: "/v1/freight/detail/get",
+      path: "/v1/order/fee-details/get",
       query: {
         ...options.query,
         waybill_number: input.waybillNumber,

@@ -40,7 +40,16 @@ export const trackingCommand = defineCommand({
         },
         "subscription-mode": {
           type: "string",
-          description: "Subscription mode",
+          description: "Deprecated alias for subscribe type",
+        },
+        "subscribe-type": {
+          type: "string",
+          description: "Subscribe type: A, F, L, N, EL, ANC",
+          required: true,
+        },
+        "query-types": {
+          type: "string",
+          description: "Comma-separated query types: C, Y, T",
         },
       },
       async run({ args }) {
@@ -49,7 +58,8 @@ export const trackingCommand = defineCommand({
           const waybillNumbers = args["waybill-numbers"].split(",").map((s) => s.trim());
           const result = await client.tracking.subscribeByWaybill({
             waybillNumbers,
-            subscriptionMode: args["subscription-mode"],
+            subscribeType: (args["subscribe-type"] ?? args["subscription-mode"]) as any,
+            queryTypes: parseQueryTypes(args["query-types"]),
           });
           printJson(result);
         } catch (error: any) {
@@ -119,16 +129,37 @@ export const trackingCommand = defineCommand({
         },
         "subscription-mode": {
           type: "string",
-          description: "Subscription mode",
+          description: "Deprecated alias for subscribe type",
+        },
+        "subscribe-type": {
+          type: "string",
+          description: "Subscribe type: A, F, L, N, EL, ANC",
+          required: true,
+        },
+        "query-types": {
+          type: "string",
+          description: "Comma-separated query types: C, Y, T",
+        },
+        "country-codes": {
+          type: "string",
+          description: "Optional comma-separated country codes applied to each product code",
         },
       },
       async run({ args }) {
         try {
           const client = createClientFromArgs(args as unknown as GlobalArgs);
           const productCodes = args["product-codes"].split(",").map((s) => s.trim());
+          const countryCodes = parseCountryCodes(args["country-codes"]);
           const result = await client.tracking.subscribeByProduct({
             productCodes,
-            subscriptionMode: args["subscription-mode"],
+            subscribeProducts: countryCodes
+              ? productCodes.map((productCode) => ({
+                  productCode,
+                  countryCodes,
+                }))
+              : undefined,
+            subscribeType: (args["subscribe-type"] ?? args["subscription-mode"]) as any,
+            queryTypes: parseQueryTypes(args["query-types"]),
           });
           printJson(result);
         } catch (error: any) {
@@ -149,12 +180,25 @@ export const trackingCommand = defineCommand({
           description: "Comma-separated product codes",
           required: true,
         },
+        "country-codes": {
+          type: "string",
+          description: "Optional comma-separated country codes applied to each product code",
+        },
       },
       async run({ args }) {
         try {
           const client = createClientFromArgs(args as unknown as GlobalArgs);
           const productCodes = args["product-codes"].split(",").map((s) => s.trim());
-          const result = await client.tracking.cancelSubscriptionByProduct({ productCodes });
+          const countryCodes = parseCountryCodes(args["country-codes"]);
+          const result = await client.tracking.cancelSubscriptionByProduct({
+            productCodes,
+            subscribeProducts: countryCodes
+              ? productCodes.map((productCode) => ({
+                  productCode,
+                  countryCodes,
+                }))
+              : undefined,
+          });
           printJson(result);
         } catch (error: any) {
           printError(error.message);
@@ -187,3 +231,13 @@ export const trackingCommand = defineCommand({
     }),
   },
 });
+
+function parseCountryCodes(countryCodes: string | undefined): string[] | undefined {
+  return countryCodes ? countryCodes.split(",").map((value) => value.trim()) : undefined;
+}
+
+function parseQueryTypes(queryTypes: string | undefined): Array<"C" | "Y" | "T"> | undefined {
+  return queryTypes
+    ? (queryTypes.split(",").map((value) => value.trim()) as Array<"C" | "Y" | "T">)
+    : undefined;
+}

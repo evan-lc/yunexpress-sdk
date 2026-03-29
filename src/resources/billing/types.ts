@@ -38,13 +38,30 @@ export interface GetFreightDetailRequest {
 
 export type FreightFeeDetail = {
   fee_name?: string;
-  fee_amount?: number;
+  amount?: number;
+  currency?: string;
+  rate?: number;
+  deduction_currency?: string;
+  deduction_amount?: number;
 } & Record<string, unknown>;
 
 export type GetFreightDetailResponse = {
   waybill_number?: string;
+  customer_order_number?: string;
+  tracking_number?: string;
   total_amount?: number;
   currency?: string;
+  fee_name?: string;
+  country_code?: string;
+  prepay?: string;
+  transaction_type?: string;
+  transaction_date?: string;
+  charge_weight?: number;
+  actual_weight?: number;
+  volume_weight?: number;
+  charge_unit?: string;
+  product_code?: string;
+  product_name?: string;
   fee_details?: FreightFeeDetail[];
 } & Record<string, unknown>;
 

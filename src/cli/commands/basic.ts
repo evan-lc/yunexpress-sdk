@@ -22,11 +22,19 @@ export const basicCommand = defineCommand({
     }),
     products: defineCommand({
       meta: { name: "products", description: "List all available products" },
-      args: { ...globalArgs },
+      args: {
+        ...globalArgs,
+        "country-code": {
+          type: "string",
+          description: "Optional country code filter",
+        },
+      },
       async run({ args }) {
         try {
           const client = createClientFromArgs(args as unknown as GlobalArgs);
-          const result = await client.basic.getProducts();
+          const result = await client.basic.getProducts({
+            countryCode: args["country-code"],
+          });
           printJson(result);
         } catch (error: any) {
           printError(error.message);

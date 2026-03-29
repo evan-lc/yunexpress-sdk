@@ -105,14 +105,20 @@ describe("TrackingResource request construction", () => {
       const url = new URL(
         typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
       );
-      expect(url.pathname).toBe("/v1/track-service/subscription/waybill/add");
+      expect(url.pathname).toBe("/v1/track-service/subscribe-by-order");
       const body = JSON.parse(init.body);
       expect(body.waybill_numbers).toEqual(["WB1", "WB2"]);
+      expect(body.subscribe_type).toBe("L");
+      expect(body.query_type).toEqual(["Y"]);
       return jsonResponse({ success: true, result: null });
     });
 
     const client = createClient(fetchMock);
-    await client.tracking.subscribeByWaybill({ waybillNumbers: ["WB1", "WB2"] });
+    await client.tracking.subscribeByWaybill({
+      waybillNumbers: ["WB1", "WB2"],
+      subscribeType: "L",
+      queryTypes: ["Y"],
+    });
   });
 
   test("cancelSubscriptionByWaybill sends POST", async () => {
@@ -120,7 +126,7 @@ describe("TrackingResource request construction", () => {
       const url = new URL(
         typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
       );
-      expect(url.pathname).toBe("/v1/track-service/subscription/waybill/cancel");
+      expect(url.pathname).toBe("/v1/track-service/unsubscribe-by-order");
       return jsonResponse({ success: true, result: null });
     });
 
@@ -133,13 +139,22 @@ describe("TrackingResource request construction", () => {
       const url = new URL(
         typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
       );
-      expect(url.pathname).toBe("/v1/track-service/subscription/waybill/get");
+      expect(url.pathname).toBe("/v1/track-service/subscribe-by-order/get");
       expect(url.searchParams.get("waybill_numbers")).toBe("WB1,WB2,WB3");
-      return jsonResponse({ success: true, result: [] });
+      return jsonResponse({
+        success: true,
+        result: {
+          order_subscribe_info: [{ waybill_number: "WB1", subscribe_type: "L" }],
+        },
+      });
     });
 
     const client = createClient(fetchMock);
-    await client.tracking.getSubscriptionByWaybill({ waybillNumbers: ["WB1", "WB2", "WB3"] });
+    const response = await client.tracking.getSubscriptionByWaybill({
+      waybillNumbers: ["WB1", "WB2", "WB3"],
+    });
+    expect(response.data).toHaveLength(1);
+    expect(response.data[0]?.waybill_number).toBe("WB1");
   });
 
   test("subscribeByProduct sends POST to correct path", async () => {
@@ -147,22 +162,30 @@ describe("TrackingResource request construction", () => {
       const url = new URL(
         typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
       );
-      expect(url.pathname).toBe("/v1/track-service/subscription/product/add");
+      expect(url.pathname).toBe("/v1/track-service/subscribe-by-shipping");
       const body = JSON.parse(init.body);
-      expect(body.product_codes).toEqual(["P1"]);
+      expect(body.subscribe_products).toEqual([{ product_code: "P1" }]);
+      expect(body.subscribe_type).toBe("N");
+      expect(body.query_type).toEqual(["C", "T"]);
       return jsonResponse({ success: true, result: null });
     });
 
     const client = createClient(fetchMock);
-    await client.tracking.subscribeByProduct({ productCodes: ["P1"] });
+    await client.tracking.subscribeByProduct({
+      productCodes: ["P1"],
+      subscribeType: "N",
+      queryTypes: ["C", "T"],
+    });
   });
 
   test("cancelSubscriptionByProduct sends POST", async () => {
-    const fetchMock = vi.fn(async (input: any) => {
+    const fetchMock = vi.fn(async (input: any, init: any) => {
       const url = new URL(
         typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
       );
-      expect(url.pathname).toBe("/v1/track-service/subscription/product/cancel");
+      expect(url.pathname).toBe("/v1/track-service/unsubscribe-by-shipping");
+      const body = JSON.parse(init.body);
+      expect(body.subscribe_products).toEqual([{ product_code: "P1" }]);
       return jsonResponse({ success: true, result: null });
     });
 
@@ -175,12 +198,17 @@ describe("TrackingResource request construction", () => {
       const url = new URL(
         typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
       );
-      expect(url.pathname).toBe("/v1/track-service/subscription/product/get");
+      expect(url.pathname).toBe("/v1/track-service/subscribe-by-shipping/get");
       expect(url.searchParams.get("product_code")).toBe("THZXR");
-      return jsonResponse({ success: true, result: [] });
+      return jsonResponse({
+        success: true,
+        result: { ProductSubscribe: [{ product_code: "THZXR", subscribe_Type: "A" }] },
+      });
     });
 
     const client = createClient(fetchMock);
-    await client.tracking.getSubscriptionByProduct({ productCode: "THZXR" });
+    const response = await client.tracking.getSubscriptionByProduct({ productCode: "THZXR" });
+    expect(response.data).toHaveLength(1);
+    expect(response.data[0]?.product_code).toBe("THZXR");
   });
 });

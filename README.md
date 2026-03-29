@@ -11,8 +11,8 @@ TypeScript SDK and CLI for the [YunExpress OpenAPI](https://openapi.yunexpress.c
 - Replaceable signer, token provider, and request/response interceptor hooks
 - Retry-aware HTTP transport with configurable retry policy
 - Unified error hierarchy (`AuthenticationError`, `RateLimitError`, `UpstreamApiError`, `RequestExecutionError`)
-- Full resource coverage: orders, labels, tracking, pricing, billing, exceptions, returns, basic
-- CLI with all API operations available as subcommands
+- Implemented coverage for direct orders, labels, tracking, pricing, billing, exception release, returns creation, and basic lookups
+- CLI with the implemented API operations available as subcommands
 
 ## Install
 
@@ -137,35 +137,37 @@ The input is normalized to the documented query parameter `order_number`. The re
 
 ## API Coverage
 
-All resources below are fully typed. Access them as `client.<namespace>.<method>(...)`.
+The implemented resources below are typed. Access them as `client.<namespace>.<method>(...)`.
 
-| Namespace      | Method                        | Endpoint                                             |
-| -------------- | ----------------------------- | ---------------------------------------------------- |
-| **orders**     | `createPackage`               | `POST /v1/order/package/create`                      |
-|                | `getWaybillDetail`            | `GET  /v1/order/info/get`                            |
-|                | `getSender`                   | `GET  /v1/order/sender/get`                          |
-|                | `getLastMileCarriers`         | `POST /v1/order/last-mile/get`                       |
-|                | `modifyWeight`                | `POST /v1/order/weight/modify`                       |
-|                | `cancelOrder`                 | `POST /v1/order/cancel`                              |
-|                | `holdOrder`                   | `POST /v1/order/hold`                                |
-|                | `getPickupPoints`             | `POST /v1/pickup/get`                                |
-| **labels**     | `getLabel`                    | `GET  /v1/order/label/get`                           |
-|                | `getShippingDocs`             | `GET  /v1/order/shipping-docs/get`                   |
-|                | `getPod`                      | `GET  /v1/order/pod/get`                             |
-| **tracking**   | `getTrackingInfo`             | `GET  /v1/track-service/info/get`                    |
-|                | `subscribeByWaybill`          | `POST /v1/track-service/subscription/waybill/add`    |
-|                | `cancelSubscriptionByWaybill` | `POST /v1/track-service/subscription/waybill/cancel` |
-|                | `getSubscriptionByWaybill`    | `GET  /v1/track-service/subscription/waybill/get`    |
-|                | `subscribeByProduct`          | `POST /v1/track-service/subscription/product/add`    |
-|                | `cancelSubscriptionByProduct` | `POST /v1/track-service/subscription/product/cancel` |
-|                | `getSubscriptionByProduct`    | `GET  /v1/track-service/subscription/product/get`    |
-| **pricing**    | `getPriceTrial`               | `GET  /v1/price-trial/get`                           |
-| **billing**    | `getBillingDetail`            | `GET  /v1/bill/details/list`                         |
-|                | `getFreightDetail`            | `GET  /v1/freight/detail/get`                        |
-| **exceptions** | `releaseIssue`                | `POST /v1/issue/release`                             |
-| **returns**    | `createReturnOrder`           | `POST /v1/openapi/order/add`                         |
-| **basic**      | `getCountryCodes`             | `GET  /v1/basic/country/get`                         |
-|                | `getProducts`                 | `GET  /v1/basic/product/get`                         |
+The official YunExpress docs currently expose additional exception-order, B2B, and return-service endpoints that are not yet modeled in this SDK.
+
+| Namespace      | Method                        | Endpoint                                           |
+| -------------- | ----------------------------- | -------------------------------------------------- |
+| **orders**     | `createPackage`               | `POST /v1/order/package/create`                    |
+|                | `getWaybillDetail`            | `GET  /v1/order/info/get`                          |
+|                | `getSender`                   | `GET  /v1/order/sender/get`                        |
+|                | `getLastMileCarriers`         | `POST /v1/order/last-mile/get`                     |
+|                | `modifyWeight`                | `POST /v1/order/weight/modify`                     |
+|                | `cancelOrder`                 | `POST /v1/order/cancel`                            |
+|                | `holdOrder`                   | `POST /v1/order/hold`                              |
+|                | `getPickupPoints`             | `POST /v1/pickup/get`                              |
+| **labels**     | `getLabel`                    | `GET  /v1/order/label/get`                         |
+|                | `getShippingDocs`             | `GET  /v1/order/shipping-docs/get`                 |
+|                | `getPod`                      | `GET  /v1/order/pod/get`                           |
+| **tracking**   | `getTrackingInfo`             | `GET  /v1/track-service/info/get`                  |
+|                | `subscribeByWaybill`          | `POST /v1/track-service/subscribe-by-order`        |
+|                | `cancelSubscriptionByWaybill` | `POST /v1/track-service/unsubscribe-by-order`      |
+|                | `getSubscriptionByWaybill`    | `GET  /v1/track-service/subscribe-by-order/get`    |
+|                | `subscribeByProduct`          | `POST /v1/track-service/subscribe-by-shipping`     |
+|                | `cancelSubscriptionByProduct` | `POST /v1/track-service/unsubscribe-by-shipping`   |
+|                | `getSubscriptionByProduct`    | `GET  /v1/track-service/subscribe-by-shipping/get` |
+| **pricing**    | `getPriceTrial`               | `GET  /v1/price-trial/get`                         |
+| **billing**    | `getBillingDetail`            | `GET  /v1/bill/details/list`                       |
+|                | `getFreightDetail`            | `GET  /v1/order/fee-details/get`                   |
+| **exceptions** | `releaseIssue`                | `POST /v1/issue/release`                           |
+| **returns**    | `createReturnOrder`           | `POST /v1/openapi/order/add`                       |
+| **basic**      | `getCountryCodes`             | `GET  /v1/basic-data/countries/getlist`            |
+|                | `getProducts`                 | `GET  /v1/basic-data/products/getlist`             |
 
 ## Low-Level Request Access
 
@@ -195,7 +197,7 @@ console.log(response.data);
 
 ## CLI
 
-The SDK ships a `yunexpress` CLI for quick terminal access to all API resources.
+The SDK ships a `yunexpress` CLI for quick terminal access to the implemented API resources.
 
 ### Setup
 
@@ -256,7 +258,7 @@ Use `yunexpress <command> --help` to see subcommands and options.
 ```bash
 # Basic data lookups
 yunexpress basic countries
-yunexpress basic products
+yunexpress basic products --country-code US
 
 # Orders
 yunexpress orders create --data @payload.json
@@ -277,10 +279,10 @@ yunexpress labels pod --order-number YT2231431267000001
 
 # Tracking
 yunexpress tracking get --order-number YT2231431267000001
-yunexpress tracking subscribe-waybill --waybill-numbers YT001,YT002,YT003
+yunexpress tracking subscribe-waybill --waybill-numbers YT001,YT002,YT003 --subscribe-type L --query-types Y
 yunexpress tracking cancel-waybill --waybill-numbers YT001,YT002
 yunexpress tracking get-waybill-sub --waybill-numbers YT001
-yunexpress tracking subscribe-product --product-codes STANDARD,EXPRESS
+yunexpress tracking subscribe-product --product-codes STANDARD,EXPRESS --subscribe-type N --query-types C,T
 yunexpress tracking cancel-product --product-codes STANDARD
 yunexpress tracking get-product-sub --product-code STANDARD
 

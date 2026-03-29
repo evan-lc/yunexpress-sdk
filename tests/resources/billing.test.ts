@@ -118,7 +118,7 @@ describe("BillingResource request construction", () => {
       const url = new URL(
         typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
       );
-      expect(url.pathname).toBe("/v1/freight/detail/get");
+      expect(url.pathname).toBe("/v1/order/fee-details/get");
       expect(url.searchParams.get("waybill_number")).toBe("WB1");
       return jsonResponse({ success: true, result: { total_amount: 100 } });
     });
