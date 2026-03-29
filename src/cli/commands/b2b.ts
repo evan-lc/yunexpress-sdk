@@ -1,26 +1,26 @@
 import { defineCommand } from "citty";
 import { createClientFromArgs } from "../config.ts";
-import { printError, printJson, readDataInput } from "../output.ts";
+import { printError, printJson } from "../output.ts";
 import { globalArgs, type GlobalArgs } from "../shared.ts";
 
-export const returnsCommand = defineCommand({
-  meta: { name: "returns", description: "Return order operations" },
+export const b2bCommand = defineCommand({
+  meta: { name: "b2b", description: "B2B order operations" },
   subCommands: {
     get: defineCommand({
-      meta: { name: "get", description: "Get a return order detail" },
+      meta: { name: "get", description: "Get B2B order detail" },
       args: {
         ...globalArgs,
-        "order-code": {
+        "order-number": {
           type: "string",
-          description: "Return order code",
+          description: "Order number",
           required: true,
         },
       },
       async run({ args }) {
         try {
           const client = createClientFromArgs(args as unknown as GlobalArgs);
-          const result = await client.returns.getOrderDetail({
-            orderCode: args["order-code"],
+          const result = await client.b2b.getWaybillDetail({
+            orderNumber: args["order-number"],
           });
           printJson(result);
         } catch (error: any) {
@@ -29,21 +29,21 @@ export const returnsCommand = defineCommand({
         }
       },
     }),
-    "transfer-detail": defineCommand({
-      meta: { name: "transfer-detail", description: "Get a return transfer detail" },
+    label: defineCommand({
+      meta: { name: "label", description: "Get B2B label" },
       args: {
         ...globalArgs,
-        "transfer-code": {
+        "order-number": {
           type: "string",
-          description: "Transfer code",
+          description: "Order number",
           required: true,
         },
       },
       async run({ args }) {
         try {
           const client = createClientFromArgs(args as unknown as GlobalArgs);
-          const result = await client.returns.getTransferDetail({
-            transferCode: args["transfer-code"],
+          const result = await client.b2b.getLabel({
+            orderNumber: args["order-number"],
           });
           printJson(result);
         } catch (error: any) {
@@ -52,66 +52,21 @@ export const returnsCommand = defineCommand({
         }
       },
     }),
-    create: defineCommand({
-      meta: { name: "create", description: "Create a return order" },
+    "last-mile-carriers": defineCommand({
+      meta: { name: "last-mile-carriers", description: "Get B2B last mile carriers" },
       args: {
         ...globalArgs,
-        data: {
+        "waybill-numbers": {
           type: "string",
-          description: "JSON payload or @file path (e.g. --data @return.json)",
+          description: "Comma-separated waybill numbers",
           required: true,
         },
       },
       async run({ args }) {
         try {
           const client = createClientFromArgs(args as unknown as GlobalArgs);
-          const input = await readDataInput(args.data);
-          const result = await client.returns.createReturnOrder(input as any);
-          printJson(result);
-        } catch (error: any) {
-          printError(error.message);
-          process.exit(1);
-        }
-      },
-    }),
-    cancel: defineCommand({
-      meta: { name: "cancel", description: "Cancel return orders" },
-      args: {
-        ...globalArgs,
-        "order-codes": {
-          type: "string",
-          description: "Comma-separated return order codes",
-          required: true,
-        },
-      },
-      async run({ args }) {
-        try {
-          const client = createClientFromArgs(args as unknown as GlobalArgs);
-          const result = await client.returns.cancelOrders({
-            orderCodes: args["order-codes"].split(",").map((value) => value.trim()),
-          });
-          printJson(result);
-        } catch (error: any) {
-          printError(error.message);
-          process.exit(1);
-        }
-      },
-    }),
-    labels: defineCommand({
-      meta: { name: "labels", description: "Download return labels" },
-      args: {
-        ...globalArgs,
-        "order-codes": {
-          type: "string",
-          description: "Comma-separated return order codes",
-          required: true,
-        },
-      },
-      async run({ args }) {
-        try {
-          const client = createClientFromArgs(args as unknown as GlobalArgs);
-          const result = await client.returns.getLabels({
-            orderCodes: args["order-codes"].split(",").map((value) => value.trim()),
+          const result = await client.b2b.getLastMileCarriers({
+            waybillNumbers: args["waybill-numbers"].split(",").map((value) => value.trim()),
           });
           printJson(result);
         } catch (error: any) {
@@ -121,30 +76,9 @@ export const returnsCommand = defineCommand({
       },
     }),
     products: defineCommand({
-      meta: { name: "products", description: "List return products" },
+      meta: { name: "products", description: "List B2B products" },
       args: {
         ...globalArgs,
-      },
-      async run({ args }) {
-        try {
-          const client = createClientFromArgs(args as unknown as GlobalArgs);
-          const result = await client.returns.getProducts();
-          printJson(result);
-        } catch (error: any) {
-          printError(error.message);
-          process.exit(1);
-        }
-      },
-    }),
-    warehouses: defineCommand({
-      meta: { name: "warehouses", description: "List return warehouses for a product" },
-      args: {
-        ...globalArgs,
-        "product-code": {
-          type: "string",
-          description: "Product code",
-          required: true,
-        },
         "country-code": {
           type: "string",
           description: "Optional 2-letter country code",
@@ -153,8 +87,7 @@ export const returnsCommand = defineCommand({
       async run({ args }) {
         try {
           const client = createClientFromArgs(args as unknown as GlobalArgs);
-          const result = await client.returns.getWarehouses({
-            productCode: args["product-code"],
+          const result = await client.b2b.getProducts({
             countryCode: args["country-code"],
           });
           printJson(result);
@@ -164,8 +97,59 @@ export const returnsCommand = defineCommand({
         }
       },
     }),
-    "send-types": defineCommand({
-      meta: { name: "send-types", description: "List return send types for a product" },
+    "address-types": defineCommand({
+      meta: { name: "address-types", description: "List B2B secondary address types" },
+      args: {
+        ...globalArgs,
+      },
+      async run({ args }) {
+        try {
+          const client = createClientFromArgs(args as unknown as GlobalArgs);
+          const result = await client.b2b.getSecondaryAddressTypes();
+          printJson(result);
+        } catch (error: any) {
+          printError(error.message);
+          process.exit(1);
+        }
+      },
+    }),
+    addresses: defineCommand({
+      meta: { name: "addresses", description: "List B2B warehouse addresses" },
+      args: {
+        ...globalArgs,
+        "address-type": {
+          type: "string",
+          description: "Optional address type: 0, 1, 2, or 3",
+        },
+        "secondary-address-type": {
+          type: "string",
+          description: "Optional secondary address type",
+        },
+        "country-code": {
+          type: "string",
+          description: "Optional 2-letter country code",
+        },
+      },
+      async run({ args }) {
+        try {
+          const client = createClientFromArgs(args as unknown as GlobalArgs);
+          const result = await client.b2b.getWarehouseAddresses({
+            addressType:
+              args["address-type"] !== undefined
+                ? (Number(args["address-type"]) as 0 | 1 | 2 | 3)
+                : undefined,
+            secondaryAddressType: args["secondary-address-type"],
+            countryCode: args["country-code"],
+          });
+          printJson(result);
+        } catch (error: any) {
+          printError(error.message);
+          process.exit(1);
+        }
+      },
+    }),
+    "self-warehouses": defineCommand({
+      meta: { name: "self-warehouses", description: "List B2B self warehouses for a product" },
       args: {
         ...globalArgs,
         "product-code": {
@@ -173,25 +157,29 @@ export const returnsCommand = defineCommand({
           description: "Product code",
           required: true,
         },
-        "sender-country": {
-          type: "string",
-          description: "Sender country code",
-          required: true,
-        },
-        "warehouse-country": {
-          type: "string",
-          description: "Warehouse country code",
-          required: true,
-        },
       },
       async run({ args }) {
         try {
           const client = createClientFromArgs(args as unknown as GlobalArgs);
-          const result = await client.returns.getSendTypes({
+          const result = await client.b2b.getSelfWarehouses({
             productCode: args["product-code"],
-            senderCountry: args["sender-country"],
-            warehouseCountry: args["warehouse-country"],
           });
+          printJson(result);
+        } catch (error: any) {
+          printError(error.message);
+          process.exit(1);
+        }
+      },
+    }),
+    "collect-warehouses": defineCommand({
+      meta: { name: "collect-warehouses", description: "List B2B collect warehouses" },
+      args: {
+        ...globalArgs,
+      },
+      async run({ args }) {
+        try {
+          const client = createClientFromArgs(args as unknown as GlobalArgs);
+          const result = await client.b2b.getCollectWarehouses();
           printJson(result);
         } catch (error: any) {
           printError(error.message);

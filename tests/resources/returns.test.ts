@@ -127,6 +127,38 @@ describe("assertValidCreateReturnOrderRequest", () => {
 });
 
 describe("ReturnsResource request construction", () => {
+  test("getOrderDetail sends GET with order_code", async () => {
+    const fetchMock = vi.fn(async (input: any, init: any) => {
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+      );
+      expect(init.method).toBe("GET");
+      expect(url.pathname).toBe("/v1/openapi/order/detail");
+      expect(url.searchParams.get("order_code")).toBe("RT-1");
+      return jsonResponse({ success: true, result: { order_code: "RT-1" } });
+    });
+
+    const client = createClient(fetchMock);
+    const response = await client.returns.getOrderDetail({ orderCode: "RT-1" });
+    expect(response.data.order_code).toBe("RT-1");
+  });
+
+  test("getTransferDetail sends GET with transfer_code", async () => {
+    const fetchMock = vi.fn(async (input: any, init: any) => {
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+      );
+      expect(init.method).toBe("GET");
+      expect(url.pathname).toBe("/v1/openapi/order/transferdetail");
+      expect(url.searchParams.get("transfer_code")).toBe("TF-1");
+      return jsonResponse({ success: true, result: { actual_box_count: 1 } });
+    });
+
+    const client = createClient(fetchMock);
+    const response = await client.returns.getTransferDetail({ transferCode: "TF-1" });
+    expect(response.data.actual_box_count).toBe(1);
+  });
+
   test("createReturnOrder sends POST with nested body", async () => {
     const fetchMock = vi.fn(async (input: any, init: any) => {
       const url = new URL(
@@ -166,5 +198,94 @@ describe("ReturnsResource request construction", () => {
         },
       }),
     );
+  });
+
+  test("cancelOrders sends POST with order_codes", async () => {
+    const fetchMock = vi.fn(async (input: any, init: any) => {
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+      );
+      expect(url.pathname).toBe("/v1/openapi/order/cancel");
+      expect(JSON.parse(init.body)).toEqual({ order_codes: ["RT-1", "RT-2"] });
+      return jsonResponse({ success: true, result: null });
+    });
+
+    const client = createClient(fetchMock);
+    await client.returns.cancelOrders({ orderCodes: ["RT-1", "RT-2"] });
+  });
+
+  test("getLabels sends POST with order_codes and normalizes array response", async () => {
+    const fetchMock = vi.fn(async (input: any, init: any) => {
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+      );
+      expect(url.pathname).toBe("/v1/openapi/order/downloadlabels");
+      expect(JSON.parse(init.body)).toEqual({ order_codes: ["RT-3"] });
+      return jsonResponse({
+        success: true,
+        result: [{ order_code: "RT-3", label_url: "https://test/rt-3.pdf" }],
+      });
+    });
+
+    const client = createClient(fetchMock);
+    const response = await client.returns.getLabels({ orderCodes: ["RT-3"] });
+    expect(response.data[0]?.label_url).toContain("rt-3.pdf");
+  });
+
+  test("getProducts sends GET to the official returns product list endpoint", async () => {
+    const fetchMock = vi.fn(async (input: any, init: any) => {
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+      );
+      expect(init.method).toBe("GET");
+      expect(url.pathname).toBe("/v1/openapi/product/list");
+      return jsonResponse({ success: true, result: [{ product_code: "TESTRT" }] });
+    });
+
+    const client = createClient(fetchMock);
+    const response = await client.returns.getProducts();
+    expect(response.data[0]?.product_code).toBe("TESTRT");
+  });
+
+  test("getWarehouses sends GET with product_code and optional country_code", async () => {
+    const fetchMock = vi.fn(async (input: any, init: any) => {
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+      );
+      expect(init.method).toBe("GET");
+      expect(url.pathname).toBe("/v1/openapi/product/warehouse-list");
+      expect(url.searchParams.get("product_code")).toBe("TESTRT");
+      expect(url.searchParams.get("country_code")).toBe("US");
+      return jsonResponse({ success: true, result: [{ warehouse_code: "GB0040" }] });
+    });
+
+    const client = createClient(fetchMock);
+    const response = await client.returns.getWarehouses({
+      productCode: "TESTRT",
+      countryCode: "US",
+    });
+    expect(response.data[0]?.warehouse_code).toBe("GB0040");
+  });
+
+  test("getSendTypes sends GET with official query parameters", async () => {
+    const fetchMock = vi.fn(async (input: any, init: any) => {
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+      );
+      expect(init.method).toBe("GET");
+      expect(url.pathname).toBe("/v1/openapi/product/send-type-list");
+      expect(url.searchParams.get("product_code")).toBe("DE-DHL-RT");
+      expect(url.searchParams.get("sender_country")).toBe("DE");
+      expect(url.searchParams.get("warehouse_country")).toBe("DE");
+      return jsonResponse({ success: true, result: [{ shipping_method: "RTZD" }] });
+    });
+
+    const client = createClient(fetchMock);
+    const response = await client.returns.getSendTypes({
+      productCode: "DE-DHL-RT",
+      senderCountry: "DE",
+      warehouseCountry: "DE",
+    });
+    expect(response.data[0]?.shipping_method).toBe("RTZD");
   });
 });

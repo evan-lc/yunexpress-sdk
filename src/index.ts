@@ -53,11 +53,38 @@ export { OrdersResource } from "./resources/orders/OrdersResource.ts";
 export { LabelsResource } from "./resources/labels/LabelsResource.ts";
 export { TrackingResource } from "./resources/tracking/TrackingResource.ts";
 export { PricingResource } from "./resources/pricing/PricingResource.ts";
+export { B2BResource } from "./resources/b2b/B2BResource.ts";
 export { ExceptionsResource } from "./resources/exceptions/ExceptionsResource.ts";
 export { ReturnsResource } from "./resources/returns/ReturnsResource.ts";
 export { BillingResource } from "./resources/billing/BillingResource.ts";
 export { BasicResource } from "./resources/basic/BasicResource.ts";
 export { ResourceNamespace } from "./resources/ResourceNamespace.ts";
+export type {
+  B2BCollectWarehouseItem,
+  B2BDeliveryInfo,
+  B2BLabelResponse,
+  B2BLastMileCarrierItem,
+  B2BProductItem,
+  B2BSelfWarehouseItem,
+  B2BSecondaryAddressTypeItem,
+  B2BWarehouseAddressItem,
+  B2BWaybillDeclarationItem,
+  B2BWaybillPackage,
+  B2BWaybillParty,
+  GetB2BCollectWarehousesResponse,
+  GetB2BLabelRequest,
+  GetB2BLastMileCarriersRequest,
+  GetB2BLastMileCarriersResponse,
+  GetB2BProductsRequest,
+  GetB2BProductsResponse,
+  GetB2BSelfWarehousesRequest,
+  GetB2BSelfWarehousesResponse,
+  GetB2BSecondaryAddressTypesResponse,
+  GetB2BWarehouseAddressesRequest,
+  GetB2BWarehouseAddressesResponse,
+  GetB2BWaybillDetailRequest,
+  GetB2BWaybillDetailResponse,
+} from "./resources/b2b/types.ts";
 export type {
   ContactParty,
   CreatePackagePackage,
@@ -124,14 +151,43 @@ export type {
   PriceTrialItem,
 } from "./resources/pricing/types.ts";
 
-export type { ReleaseIssueRequest } from "./resources/exceptions/types.ts";
+export type {
+  GetIssueOptionsRequest,
+  GetIssueOptionsResponse,
+  GetIssueOrderDetailRequest,
+  GetIssueOrderDetailResponse,
+  GetIssueReceiveAddressesResponse,
+  IssueOptionItem,
+  IssueReceiveAddressItem,
+  MarkIssueReadRequest,
+  ReleaseIssueRequest,
+} from "./resources/exceptions/types.ts";
 
 export type {
+  CancelReturnOrdersRequest,
   CreateReturnOrderRequest,
   CreateReturnOrderResponse,
+  GetReturnLabelsRequest,
+  GetReturnLabelsResponse,
+  GetReturnOrderDetailRequest,
+  GetReturnOrderDetailResponse,
+  GetReturnProductsResponse,
+  GetReturnSendTypesRequest,
+  GetReturnSendTypesResponse,
+  GetReturnTransferDetailRequest,
+  GetReturnTransferDetailResponse,
+  GetReturnWarehousesRequest,
+  GetReturnWarehousesResponse,
   ReturnOrderSender,
   ReturnOrderReceiver,
   ReturnOrderGoodsItem,
+  ReturnLabelItem,
+  ReturnProductExtraService,
+  ReturnProductHandle,
+  ReturnProductItem,
+  ReturnSendTypeItem,
+  ReturnTransferBoxDetail,
+  ReturnWarehouseItem,
 } from "./resources/returns/types.ts";
 
 export type {

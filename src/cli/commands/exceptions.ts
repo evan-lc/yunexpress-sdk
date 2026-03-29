@@ -6,6 +6,91 @@ import { globalArgs, type GlobalArgs } from "../shared.ts";
 export const exceptionsCommand = defineCommand({
   meta: { name: "exceptions", description: "Exception handling operations" },
   subCommands: {
+    get: defineCommand({
+      meta: { name: "get", description: "Get exception order detail" },
+      args: {
+        ...globalArgs,
+        "waybill-number": {
+          type: "string",
+          description: "Waybill number",
+          required: true,
+        },
+      },
+      async run({ args }) {
+        try {
+          const client = createClientFromArgs(args as unknown as GlobalArgs);
+          const result = await client.exceptions.getOrderDetail({
+            waybillNumber: args["waybill-number"],
+          });
+          printJson(result);
+        } catch (error: any) {
+          printError(error.message);
+          process.exit(1);
+        }
+      },
+    }),
+    options: defineCommand({
+      meta: { name: "options", description: "List available exception options" },
+      args: {
+        ...globalArgs,
+        "waybill-number": {
+          type: "string",
+          description: "Waybill number",
+          required: true,
+        },
+      },
+      async run({ args }) {
+        try {
+          const client = createClientFromArgs(args as unknown as GlobalArgs);
+          const result = await client.exceptions.getOptions({
+            waybillNumber: args["waybill-number"],
+          });
+          printJson(result);
+        } catch (error: any) {
+          printError(error.message);
+          process.exit(1);
+        }
+      },
+    }),
+    read: defineCommand({
+      meta: { name: "read", description: "Mark an exception order as read" },
+      args: {
+        ...globalArgs,
+        "waybill-number": {
+          type: "string",
+          description: "Waybill number",
+          required: true,
+        },
+      },
+      async run({ args }) {
+        try {
+          const client = createClientFromArgs(args as unknown as GlobalArgs);
+          const result = await client.exceptions.markAsRead({
+            waybillNumber: args["waybill-number"],
+          });
+          printJson(result);
+        } catch (error: any) {
+          printError(error.message);
+          process.exit(1);
+        }
+      },
+    }),
+    "receive-addresses": defineCommand({
+      meta: { name: "receive-addresses", description: "List exception receive addresses" },
+      args: {
+        ...globalArgs,
+      },
+      async run({ args }) {
+        try {
+          const client = createClientFromArgs(args as unknown as GlobalArgs);
+          const result = await client.exceptions.getReceiveAddresses();
+          printJson(result);
+        } catch (error: any) {
+          printError(error.message);
+          process.exit(1);
+        }
+      },
+    }),
     release: defineCommand({
       meta: { name: "release", description: "Release an issue for a waybill" },
       args: {

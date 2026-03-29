@@ -1,6 +1,6 @@
 # yunexpress-sdk
 
-TypeScript SDK and CLI for the [YunExpress OpenAPI](https://openapi.yunexpress.cn). Ships a typed Node.js client covering orders, labels, tracking, pricing, billing, exceptions, returns, and basic data lookups, plus a `yunexpress` CLI for quick terminal access.
+TypeScript SDK and CLI for the [YunExpress OpenAPI](https://openapi.yunexpress.cn). Ships a typed Node.js client covering orders, B2B, labels, tracking, pricing, billing, exceptions, returns, and basic data lookups, plus a `yunexpress` CLI for quick terminal access.
 
 ## Features
 
@@ -11,7 +11,7 @@ TypeScript SDK and CLI for the [YunExpress OpenAPI](https://openapi.yunexpress.c
 - Replaceable signer, token provider, and request/response interceptor hooks
 - Retry-aware HTTP transport with configurable retry policy
 - Unified error hierarchy (`AuthenticationError`, `RateLimitError`, `UpstreamApiError`, `RequestExecutionError`)
-- Implemented coverage for direct orders, labels, tracking, pricing, billing, exception release, returns creation, and basic lookups
+- Implemented coverage for direct orders, B2B lookups, labels, tracking, pricing, billing, exception queries and release, return creation and follow-up queries, and basic lookups
 - CLI with the implemented API operations available as subcommands
 
 ## Install
@@ -139,35 +139,54 @@ The input is normalized to the documented query parameter `order_number`. The re
 
 The implemented resources below are typed. Access them as `client.<namespace>.<method>(...)`.
 
-The official YunExpress docs currently expose additional exception-order, B2B, and return-service endpoints that are not yet modeled in this SDK.
+The official YunExpress docs still expose additional mutation-heavy exception-order, B2B, and return-service endpoints that are not yet modeled in this SDK.
 
-| Namespace      | Method                        | Endpoint                                           |
-| -------------- | ----------------------------- | -------------------------------------------------- |
-| **orders**     | `createPackage`               | `POST /v1/order/package/create`                    |
-|                | `getWaybillDetail`            | `GET  /v1/order/info/get`                          |
-|                | `getSender`                   | `GET  /v1/order/sender/get`                        |
-|                | `getLastMileCarriers`         | `POST /v1/order/last-mile/get`                     |
-|                | `modifyWeight`                | `POST /v1/order/weight/modify`                     |
-|                | `cancelOrder`                 | `POST /v1/order/cancel`                            |
-|                | `holdOrder`                   | `POST /v1/order/hold`                              |
-|                | `getPickupPoints`             | `POST /v1/pickup/get`                              |
-| **labels**     | `getLabel`                    | `GET  /v1/order/label/get`                         |
-|                | `getShippingDocs`             | `GET  /v1/order/shipping-docs/get`                 |
-|                | `getPod`                      | `GET  /v1/order/pod/get`                           |
-| **tracking**   | `getTrackingInfo`             | `GET  /v1/track-service/info/get`                  |
-|                | `subscribeByWaybill`          | `POST /v1/track-service/subscribe-by-order`        |
-|                | `cancelSubscriptionByWaybill` | `POST /v1/track-service/unsubscribe-by-order`      |
-|                | `getSubscriptionByWaybill`    | `GET  /v1/track-service/subscribe-by-order/get`    |
-|                | `subscribeByProduct`          | `POST /v1/track-service/subscribe-by-shipping`     |
-|                | `cancelSubscriptionByProduct` | `POST /v1/track-service/unsubscribe-by-shipping`   |
-|                | `getSubscriptionByProduct`    | `GET  /v1/track-service/subscribe-by-shipping/get` |
-| **pricing**    | `getPriceTrial`               | `GET  /v1/price-trial/get`                         |
-| **billing**    | `getBillingDetail`            | `GET  /v1/bill/details/list`                       |
-|                | `getFreightDetail`            | `GET  /v1/order/fee-details/get`                   |
-| **exceptions** | `releaseIssue`                | `POST /v1/issue/release`                           |
-| **returns**    | `createReturnOrder`           | `POST /v1/openapi/order/add`                       |
-| **basic**      | `getCountryCodes`             | `GET  /v1/basic-data/countries/getlist`            |
-|                | `getProducts`                 | `GET  /v1/basic-data/products/getlist`             |
+| Namespace      | Method                        | Endpoint                                             |
+| -------------- | ----------------------------- | ---------------------------------------------------- |
+| **orders**     | `createPackage`               | `POST /v1/order/package/create`                      |
+|                | `getWaybillDetail`            | `GET  /v1/order/info/get`                            |
+|                | `getSender`                   | `GET  /v1/order/sender/get`                          |
+|                | `getLastMileCarriers`         | `POST /v1/order/last-mile/get`                       |
+|                | `modifyWeight`                | `POST /v1/order/weight/modify`                       |
+|                | `cancelOrder`                 | `POST /v1/order/cancel`                              |
+|                | `holdOrder`                   | `POST /v1/order/hold`                                |
+|                | `getPickupPoints`             | `POST /v1/pickup/get`                                |
+| **b2b**        | `getWaybillDetail`            | `GET  /v1/order/b2b/info/get`                        |
+|                | `getLabel`                    | `GET  /v1/order/b2b/label/get`                       |
+|                | `getLastMileCarriers`         | `POST /v1/order/b2b/last-mile/get`                   |
+|                | `getProducts`                 | `GET  /v1/basic-data/b2b/products/getlist`           |
+|                | `getSecondaryAddressTypes`    | `GET  /v1/warehouse/b2b/category/get`                |
+|                | `getWarehouseAddresses`       | `GET  /v1/warehouse/b2b/address/get`                 |
+|                | `getSelfWarehouses`           | `GET  /v1/basic-data/b2b/products/getselfwarehouses` |
+|                | `getCollectWarehouses`        | `GET  /api/warehouse-info/get`                       |
+| **labels**     | `getLabel`                    | `GET  /v1/order/label/get`                           |
+|                | `getShippingDocs`             | `GET  /v1/order/shipping-docs/get`                   |
+|                | `getPod`                      | `GET  /v1/order/pod/get`                             |
+| **tracking**   | `getTrackingInfo`             | `GET  /v1/track-service/info/get`                    |
+|                | `subscribeByWaybill`          | `POST /v1/track-service/subscribe-by-order`          |
+|                | `cancelSubscriptionByWaybill` | `POST /v1/track-service/unsubscribe-by-order`        |
+|                | `getSubscriptionByWaybill`    | `GET  /v1/track-service/subscribe-by-order/get`      |
+|                | `subscribeByProduct`          | `POST /v1/track-service/subscribe-by-shipping`       |
+|                | `cancelSubscriptionByProduct` | `POST /v1/track-service/unsubscribe-by-shipping`     |
+|                | `getSubscriptionByProduct`    | `GET  /v1/track-service/subscribe-by-shipping/get`   |
+| **pricing**    | `getPriceTrial`               | `GET  /v1/price-trial/get`                           |
+| **billing**    | `getBillingDetail`            | `GET  /v1/bill/details/list`                         |
+|                | `getFreightDetail`            | `GET  /v1/order/fee-details/get`                     |
+| **exceptions** | `getReceiveAddresses`         | `GET  /v1/issue/get-receive-address`                 |
+|                | `markAsRead`                  | `POST /v1/issue/read`                                |
+|                | `getOptions`                  | `GET  /v1/issue/get-options`                         |
+|                | `getOrderDetail`              | `GET  /v1/issue/get-order-detail`                    |
+| **exceptions** | `releaseIssue`                | `POST /v1/issue/release`                             |
+| **returns**    | `getOrderDetail`              | `GET  /v1/openapi/order/detail`                      |
+|                | `getTransferDetail`           | `GET  /v1/openapi/order/transferdetail`              |
+|                | `createReturnOrder`           | `POST /v1/openapi/order/add`                         |
+|                | `cancelOrders`                | `POST /v1/openapi/order/cancel`                      |
+|                | `getLabels`                   | `POST /v1/openapi/order/downloadlabels`              |
+|                | `getProducts`                 | `GET  /v1/openapi/product/list`                      |
+|                | `getWarehouses`               | `GET  /v1/openapi/product/warehouse-list`            |
+|                | `getSendTypes`                | `GET  /v1/openapi/product/send-type-list`            |
+| **basic**      | `getCountryCodes`             | `GET  /v1/basic-data/countries/getlist`              |
+|                | `getProducts`                 | `GET  /v1/basic-data/products/getlist`               |
 
 ## Low-Level Request Access
 
@@ -242,6 +261,7 @@ yunexpress --app-id xxx --api-key xxx --environment production basic countries
 
 ```
 yunexpress orders          Manage orders
+yunexpress b2b             B2B order operations
 yunexpress tracking        Tracking operations
 yunexpress labels          Label and document operations
 yunexpress pricing         Pricing operations
@@ -272,6 +292,16 @@ yunexpress orders cancel --waybill-number YT2231431267000001
 yunexpress orders hold --waybill-number YT001 --remark "Awaiting docs"
 yunexpress orders pickup-points --country-code DE --postal-code 10115
 
+# B2B
+yunexpress b2b get --order-number YT2231431267000001
+yunexpress b2b label --order-number YT2231431267000001
+yunexpress b2b last-mile-carriers --waybill-numbers YT001,YT002
+yunexpress b2b products --country-code US
+yunexpress b2b address-types
+yunexpress b2b addresses --address-type 2 --secondary-address-type 7 --country-code US
+yunexpress b2b self-warehouses --product-code B2BUAT
+yunexpress b2b collect-warehouses
+
 # Labels and documents
 yunexpress labels get --order-number YT2231431267000001
 yunexpress labels shipping-docs --order-number YT2231431267000001
@@ -294,10 +324,21 @@ yunexpress billing detail --bill-code BILL202403 --bill-type N
 yunexpress billing freight --waybill-number YT2231431267000001
 
 # Exceptions
+yunexpress exceptions get --waybill-number YT123
+yunexpress exceptions options --waybill-number YT123
+yunexpress exceptions read --waybill-number YT123
+yunexpress exceptions receive-addresses
 yunexpress exceptions release --waybill-number YT123 --remark "Resolved"
 
 # Returns
+yunexpress returns get --order-code RT10001
+yunexpress returns transfer-detail --transfer-code TF10001
 yunexpress returns create --data @return-payload.json
+yunexpress returns cancel --order-codes RT10001,RT10002
+yunexpress returns labels --order-codes RT10001
+yunexpress returns products
+yunexpress returns warehouses --product-code DE-DHL-RT --country-code DE
+yunexpress returns send-types --product-code DE-DHL-RT --sender-country DE --warehouse-country DE
 ```
 
 ### Data Input

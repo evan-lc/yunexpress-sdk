@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { defineCommand, runMain } from "citty";
+import { b2bCommand } from "./commands/b2b.ts";
 import { basicCommand } from "./commands/basic.ts";
 import { billingCommand } from "./commands/billing.ts";
 import { exceptionsCommand } from "./commands/exceptions.ts";
@@ -16,6 +17,7 @@ const main = defineCommand({
     description: "YunExpress OpenAPI CLI",
   },
   subCommands: {
+    b2b: b2bCommand,
     orders: ordersCommand,
     tracking: trackingCommand,
     labels: labelsCommand,

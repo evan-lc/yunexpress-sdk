@@ -103,6 +103,21 @@ describe("assertValidReleaseIssueRequest", () => {
 });
 
 describe("ExceptionsResource request construction", () => {
+  test("getReceiveAddresses sends GET to the official endpoint", async () => {
+    const fetchMock = vi.fn(async (input: any, init: any) => {
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+      );
+      expect(init.method).toBe("GET");
+      expect(url.pathname).toBe("/v1/issue/get-receive-address");
+      return jsonResponse({ success: true, result: [{ warehouse_code: "W02984" }] });
+    });
+
+    const client = createClient(fetchMock);
+    const response = await client.exceptions.getReceiveAddresses();
+    expect(response.data[0]?.warehouse_code).toBe("W02984");
+  });
+
   test("releaseIssue sends POST with correct body", async () => {
     const fetchMock = vi.fn(async (input: any, init: any) => {
       const url = new URL(
@@ -122,5 +137,49 @@ describe("ExceptionsResource request construction", () => {
       remark: "fix",
       extraCodes: ["203"],
     });
+  });
+
+  test("markAsRead sends POST with waybill number", async () => {
+    const fetchMock = vi.fn(async (input: any, init: any) => {
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+      );
+      expect(url.pathname).toBe("/v1/issue/read");
+      expect(JSON.parse(init.body)).toEqual({ waybill_number: "WB2" });
+      return jsonResponse({ success: true, result: null });
+    });
+
+    const client = createClient(fetchMock);
+    await client.exceptions.markAsRead({ waybillNumber: "WB2" });
+  });
+
+  test("getOptions sends GET with waybill_number query", async () => {
+    const fetchMock = vi.fn(async (input: any) => {
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+      );
+      expect(url.pathname).toBe("/v1/issue/get-options");
+      expect(url.searchParams.get("waybill_number")).toBe("WB3");
+      return jsonResponse({ success: true, result: [{ plan_code: "P0001", plan_name: "Plan 1" }] });
+    });
+
+    const client = createClient(fetchMock);
+    const response = await client.exceptions.getOptions({ waybillNumber: "WB3" });
+    expect(response.data[0]?.plan_code).toBe("P0001");
+  });
+
+  test("getOrderDetail sends GET with waybill_number query", async () => {
+    const fetchMock = vi.fn(async (input: any) => {
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+      );
+      expect(url.pathname).toBe("/v1/issue/get-order-detail");
+      expect(url.searchParams.get("waybill_number")).toBe("WB4");
+      return jsonResponse({ success: true, result: { waybill_number: "WB4", wo_info: [] } });
+    });
+
+    const client = createClient(fetchMock);
+    const response = await client.exceptions.getOrderDetail({ waybillNumber: "WB4" });
+    expect(response.data.waybill_number).toBe("WB4");
   });
 });

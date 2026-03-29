@@ -13,6 +13,7 @@ import {
   type TransportRequest,
   type TransportResponse,
 } from "../http/transport.ts";
+import { B2BResource } from "../resources/b2b/B2BResource.ts";
 import { BasicResource } from "../resources/basic/BasicResource.ts";
 import { BillingResource } from "../resources/billing/BillingResource.ts";
 import { ExceptionsResource } from "../resources/exceptions/ExceptionsResource.ts";
@@ -23,6 +24,7 @@ import { ReturnsResource } from "../resources/returns/ReturnsResource.ts";
 import { TrackingResource } from "../resources/tracking/TrackingResource.ts";
 
 export class YunExpressClient {
+  readonly b2b: B2BResource;
   readonly orders: OrdersResource;
   readonly labels: LabelsResource;
   readonly tracking: TrackingResource;
@@ -39,6 +41,7 @@ export class YunExpressClient {
     this.options = resolveClientOptions(options);
     this.transport = new YunExpressTransport(this.options);
 
+    this.b2b = new B2BResource(this);
     this.orders = new OrdersResource(this);
     this.labels = new LabelsResource(this);
     this.tracking = new TrackingResource(this);

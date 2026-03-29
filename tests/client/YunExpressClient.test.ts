@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from "vite-plus/test";
 import { YunExpressClient, type FetchLike } from "../../src/index.ts";
 import { NoopRequestSigner } from "../../src/auth/signing/RequestSigner.ts";
+import { B2BResource } from "../../src/resources/b2b/B2BResource.ts";
 import { OrdersResource } from "../../src/resources/orders/OrdersResource.ts";
 import { LabelsResource } from "../../src/resources/labels/LabelsResource.ts";
 import { TrackingResource } from "../../src/resources/tracking/TrackingResource.ts";
@@ -34,9 +35,10 @@ function createClient(overrides: Record<string, unknown> = {}) {
 }
 
 describe("YunExpressClient", () => {
-  test("initializes all 8 resource namespaces", () => {
+  test("initializes all 9 resource namespaces", () => {
     const { client } = createClient();
 
+    expect(client.b2b).toBeInstanceOf(B2BResource);
     expect(client.orders).toBeInstanceOf(OrdersResource);
     expect(client.labels).toBeInstanceOf(LabelsResource);
     expect(client.tracking).toBeInstanceOf(TrackingResource);
