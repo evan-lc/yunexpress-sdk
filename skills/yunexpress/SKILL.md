@@ -237,16 +237,16 @@ The return payload uses the same `--data` pattern as order creation (JSON string
 
 ### Billing — costs and invoices
 
-**Get billing detail for a waybill:**
+**Get billing detail by bill code and type:**
 
 ```bash
-yunexpress billing detail --waybill-number YT001
+yunexpress billing detail --bill-code BILL202403 --bill-type N
 ```
 
-**Filter by date range:**
+**Paginate billing detail results:**
 
 ```bash
-yunexpress billing detail --start-date 2024-01-01 --end-date 2024-12-31
+yunexpress billing detail --bill-code BILL202403 --bill-type N --page-no 1 --page-size 10
 ```
 
 **Get freight detail:**
@@ -255,7 +255,7 @@ yunexpress billing detail --start-date 2024-01-01 --end-date 2024-12-31
 yunexpress billing freight --waybill-number YT001
 ```
 
-Pagination: `--page 1 --page-size 20`
+Pagination: `--page-no 1 --page-size 10`
 
 ### Basic lookups — what countries and products are available?
 

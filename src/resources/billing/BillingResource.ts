@@ -2,6 +2,7 @@ import type { YunExpressClient } from "../../client/YunExpressClient.ts";
 import type { TransportRequestOptions, TransportResponse } from "../../http/transport.ts";
 import { ResourceNamespace } from "../ResourceNamespace.ts";
 import {
+  assertValidGetBillingDetailRequest,
   assertValidGetFreightDetailRequest,
   type GetBillingDetailRequest,
   type GetBillingDetailResponse,
@@ -15,20 +16,21 @@ export class BillingResource extends ResourceNamespace {
   }
 
   getBillingDetail(
-    input: GetBillingDetailRequest = {},
+    input: GetBillingDetailRequest,
     options: TransportRequestOptions = {},
   ): Promise<TransportResponse<GetBillingDetailResponse>> {
+    assertValidGetBillingDetailRequest(input);
+
     return this.request<GetBillingDetailResponse>({
       ...options,
       method: "GET",
-      path: "/v1/billing/detail/get",
+      path: "/v1/bill/details/list",
       query: {
         ...options.query,
-        waybill_number: input.waybillNumber,
-        start_date: input.startDate,
-        end_date: input.endDate,
-        page: input.page,
-        page_size: input.pageSize,
+        bill_code: input.billCode,
+        bill_type: input.billType,
+        page_no: input.pageNo ?? 1,
+        page_size: input.pageSize ?? 10,
       },
     });
   }

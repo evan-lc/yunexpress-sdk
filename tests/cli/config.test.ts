@@ -1,10 +1,16 @@
+import { rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
 import { createClientFromArgs } from "../../src/cli/config.ts";
 import type { GlobalArgs } from "../../src/cli/shared.ts";
 
+const testConfigPath = resolve(tmpdir(), "yunexpress-sdk-config.test.json");
+
 function baseArgs(overrides: Partial<GlobalArgs> = {}): GlobalArgs {
   return {
     debug: false,
+    config: testConfigPath,
     ...overrides,
   };
 }
@@ -13,6 +19,7 @@ describe("createClientFromArgs", () => {
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
+    rmSync(testConfigPath, { force: true });
     process.env = { ...originalEnv };
     delete process.env.YUNEXPRESS_APP_ID;
     delete process.env.YUNEXPRESS_API_KEY;
@@ -23,6 +30,7 @@ describe("createClientFromArgs", () => {
   });
 
   afterEach(() => {
+    rmSync(testConfigPath, { force: true });
     process.env = originalEnv;
   });
 

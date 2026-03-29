@@ -160,7 +160,7 @@ All resources below are fully typed. Access them as `client.<namespace>.<method>
 |                | `cancelSubscriptionByProduct` | `POST /v1/track-service/subscription/product/cancel` |
 |                | `getSubscriptionByProduct`    | `GET  /v1/track-service/subscription/product/get`    |
 | **pricing**    | `getPriceTrial`               | `GET  /v1/price-trial/get`                           |
-| **billing**    | `getBillingDetail`            | `GET  /v1/billing/detail/get`                        |
+| **billing**    | `getBillingDetail`            | `GET  /v1/bill/details/list`                         |
 |                | `getFreightDetail`            | `GET  /v1/freight/detail/get`                        |
 | **exceptions** | `releaseIssue`                | `POST /v1/issue/release`                             |
 | **returns**    | `createReturnOrder`           | `POST /v1/openapi/order/add`                         |
@@ -288,7 +288,7 @@ yunexpress tracking get-product-sub --product-code STANDARD
 yunexpress pricing trial --country-code US --weight 0.5 --weight-unit KG
 
 # Billing
-yunexpress billing detail --start-date 2024-01-01 --end-date 2024-12-31
+yunexpress billing detail --bill-code BILL202403 --bill-type N
 yunexpress billing freight --waybill-number YT2231431267000001
 
 # Exceptions

@@ -10,35 +10,42 @@ export const billingCommand = defineCommand({
       meta: { name: "detail", description: "Get billing detail" },
       args: {
         ...globalArgs,
-        "waybill-number": {
+        "bill-code": {
           type: "string",
-          description: "Waybill number filter",
+          description: "Billing code",
+          required: true,
         },
-        "start-date": {
+        "bill-type": {
           type: "string",
-          description: "Start date filter (e.g. 2024-01-01)",
+          description: "Billing type: I, Q, T, N, K, C, R, V, TJ, TT",
+          required: true,
         },
-        "end-date": {
+        "page-no": {
           type: "string",
-          description: "End date filter (e.g. 2024-12-31)",
-        },
-        page: {
-          type: "string",
-          description: "Page number",
+          description: "Page number (defaults to 1)",
         },
         "page-size": {
           type: "string",
-          description: "Number of items per page",
+          description: "Number of items per page (defaults to 10)",
         },
       },
       async run({ args }) {
         try {
           const client = createClientFromArgs(args as unknown as GlobalArgs);
           const result = await client.billing.getBillingDetail({
-            waybillNumber: args["waybill-number"],
-            startDate: args["start-date"],
-            endDate: args["end-date"],
-            page: args.page ? Number(args.page) : undefined,
+            billCode: args["bill-code"],
+            billType: args["bill-type"] as
+              | "I"
+              | "Q"
+              | "T"
+              | "N"
+              | "K"
+              | "C"
+              | "R"
+              | "V"
+              | "TJ"
+              | "TT",
+            pageNo: args["page-no"] ? Number(args["page-no"]) : undefined,
             pageSize: args["page-size"] ? Number(args["page-size"]) : undefined,
           });
           printJson(result);

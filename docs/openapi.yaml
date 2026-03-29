@@ -975,49 +975,46 @@ paths:
                     - "https://label.yunexpress.cn/label.pdf"
                   free_days: 1
 
-  /v1/billing/detail/get:
+  /v1/bill/details/list:
     get:
       operationId: getBillingDetail
       summary: Get billing details (获取账单明细列表)
       description: |
-        Query billing fee details for the customer account.
+        Query customer billing detail records by billing code and billing type.
       tags:
         - Fee Query
       parameters:
-        - name: waybill_number
+        - name: bill_code
           in: query
-          required: false
-          description: "Waybill number to query billing for"
+          required: true
+          description: "Billing code"
           schema:
             type: string
-        - name: start_date
+        - name: bill_type
           in: query
-          required: false
-          description: "Start date for billing query (format: yyyy-MM-dd)"
+          required: true
+          description: "Billing type"
           schema:
             type: string
-            format: date
-        - name: end_date
+            enum: [I, Q, T, N, K, C, R, V, TJ, TT]
+        - name: page_no
           in: query
           required: false
-          description: "End date for billing query (format: yyyy-MM-dd)"
-          schema:
-            type: string
-            format: date
-        - name: page
-          in: query
-          required: false
-          description: "Page number"
+          description: "Page number. Defaults to 1. Range: 1-100000"
           schema:
             type: integer
             default: 1
+            minimum: 1
+            maximum: 100000
         - name: page_size
           in: query
           required: false
-          description: "Page size"
+          description: "Page size. Defaults to 10. Range: 1-100"
           schema:
             type: integer
-            default: 20
+            default: 10
+            minimum: 1
+            maximum: 100
       responses:
         "200":
           description: Successful response
@@ -2162,21 +2159,60 @@ components:
         msg:
           type: string
         result:
-          type: array
+          type: object
+          properties:
+            receipt:
+              $ref: "#/components/schemas/BillingDetailSection"
+            expenditure_records:
+              type: array
+              nullable: true
+              items:
+                $ref: "#/components/schemas/BillingDetailItem"
+            additional_surcharge:
+              $ref: "#/components/schemas/BillingDetailSection"
+            correct_record:
+              $ref: "#/components/schemas/BillingDetailSection"
+            return_record:
+              $ref: "#/components/schemas/BillingDetailSection"
+            vat_records:
+              $ref: "#/components/schemas/BillingDetailSection"
+            transfer_tracking:
+              $ref: "#/components/schemas/BillingDetailSection"
+            return_order:
+              $ref: "#/components/schemas/BillingDetailSection"
+            clearance_record:
+              $ref: "#/components/schemas/BillingDetailSection"
+            transfer_record:
+              $ref: "#/components/schemas/BillingDetailSection"
+          additionalProperties: true
+
+    BillingDetailSection:
+      nullable: true
+      oneOf:
+        - type: array
           items:
-            type: object
-            properties:
-              waybill_number:
-                type: string
-              fee_name:
-                type: string
-              fee_amount:
-                type: number
-              currency:
-                type: string
-              billing_date:
-                type: string
-            additionalProperties: true
+            $ref: "#/components/schemas/BillingDetailItem"
+        - type: object
+          additionalProperties: true
+
+    BillingDetailItem:
+      type: object
+      properties:
+        waybill_number:
+          type: string
+        customer_order_number:
+          type: string
+        customer_code:
+          type: string
+        customer_name:
+          type: string
+        reporting_currency:
+          type: string
+        total_fee:
+          type: number
+        remark:
+          type: string
+      additionalProperties: true
 
     ApiEnvelope_FreightDetailResponse:
       type: object
