@@ -3,6 +3,7 @@ import type { TransportRequestOptions, TransportResponse } from "../../http/tran
 import { ResourceNamespace } from "../ResourceNamespace.ts";
 import {
   assertValidCancelB2BOrderRequest,
+  assertValidCreateB2BOrderRequest,
   assertValidGetB2BLabelRequest,
   assertValidGetB2BLastMileCarriersRequest,
   assertValidGetB2BProductsRequest,
@@ -12,6 +13,12 @@ import {
   assertValidHoldB2BOrderRequest,
   type CancelB2BOrderRequest,
   type B2BCollectWarehouseItem,
+  type CreateB2BOrderDeclarationItem,
+  type CreateB2BOrderDeliveryInfo,
+  type CreateB2BOrderPackage,
+  type CreateB2BOrderReceiver,
+  type CreateB2BOrderRequest,
+  type CreateB2BOrderResponse,
   type B2BLabelResponse,
   type B2BLastMileCarrierItem,
   type B2BProductItem,
@@ -242,6 +249,91 @@ export class B2BResource extends ResourceNamespace {
       },
     });
   }
+
+  createOrder(
+    input: CreateB2BOrderRequest,
+    options: TransportRequestOptions = {},
+  ): Promise<TransportResponse<CreateB2BOrderResponse>> {
+    assertValidCreateB2BOrderRequest(input);
+
+    return this.request<CreateB2BOrderResponse>({
+      ...options,
+      method: "POST",
+      path: "/v1/order/b2b/create",
+      body: {
+        customer_order_number: input.customerOrderNumber,
+        product_code: input.productCode,
+        country_code: input.countryCode,
+        ein_number: input.einNumber,
+        import_company: input.importCompany,
+        bond_expire_time: input.bondExpireTime,
+        reference_id: input.referenceId,
+        goods_type: input.goodsType,
+        currency: input.currency,
+        coupon_code: input.couponCode,
+        extra_services: input.extraServices,
+        receiver: normalizeCreateB2BOrderReceiver(input.receiver),
+        packages: input.packages.map(normalizeCreateB2BOrderPackage),
+        delivery_info: normalizeCreateB2BOrderDeliveryInfo(input.deliveryInfo),
+        source_code: input.sourceCode,
+      },
+    });
+  }
+}
+
+function normalizeCreateB2BOrderReceiver(input: CreateB2BOrderReceiver): Record<string, unknown> {
+  const { countryCode, addressLines, postalCode, phoneNumber, houseNumber, ...rest } = input;
+
+  return {
+    ...rest,
+    country_code: countryCode,
+    address_lines: addressLines,
+    postal_code: postalCode,
+    phone_number: phoneNumber,
+    house_number: houseNumber,
+  };
+}
+
+function normalizeCreateB2BOrderPackage(input: CreateB2BOrderPackage): Record<string, unknown> {
+  const { boxNumber, referenceId, declarationInfo, ...rest } = input;
+
+  return {
+    ...rest,
+    box_number: boxNumber,
+    reference_id: referenceId,
+    declaration_info: declarationInfo?.map(normalizeCreateB2BOrderDeclarationItem),
+  };
+}
+
+function normalizeCreateB2BOrderDeclarationItem(
+  input: CreateB2BOrderDeclarationItem,
+): Record<string, unknown> {
+  const { unitPrice, unitWeight, nameCn, nameEn, hsCode, goodsUrl, quantityUnit, ...rest } = input;
+
+  return {
+    ...rest,
+    unit_price: unitPrice,
+    unit_weight: unitWeight,
+    name_cn: nameCn,
+    name_en: nameEn,
+    hs_code: hsCode,
+    goods_url: goodsUrl,
+    quantity_unit: quantityUnit,
+  };
+}
+
+function normalizeCreateB2BOrderDeliveryInfo(
+  input: CreateB2BOrderDeliveryInfo,
+): Record<string, unknown> {
+  const { deliveryType, collectAddress, collectStartTime, collectEndTime, ...rest } = input;
+
+  return {
+    ...rest,
+    delivery_type: deliveryType,
+    collect_address: collectAddress,
+    collect_starttime: collectStartTime,
+    collect_endtime: collectEndTime,
+  };
 }
 
 function normalizeArrayResponse<TArray extends unknown[]>(

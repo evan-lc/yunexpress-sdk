@@ -3,6 +3,7 @@ import type { TransportRequestOptions, TransportResponse } from "../../http/tran
 import { ResourceNamespace } from "../ResourceNamespace.ts";
 import {
   assertValidCancelReturnOrdersRequest,
+  assertValidCreateReturnTransferRequest,
   assertValidCreateReturnOrderRequest,
   assertValidGetReturnLabelsRequest,
   assertValidGetReturnOrderDetailRequest,
@@ -11,6 +12,8 @@ import {
   assertValidGetReturnWarehousesRequest,
   assertValidProcessReturnArrivalRequest,
   type CancelReturnOrdersRequest,
+  type CreateReturnTransferRequest,
+  type CreateReturnTransferResponse,
   type CreateReturnOrderRequest,
   type CreateReturnOrderResponse,
   type GetReturnLabelsRequest,
@@ -88,39 +91,10 @@ export class ReturnsResource extends ResourceNamespace {
         width: input.width,
         height: input.height,
         extra_services: input.extraServices,
-        sender: {
-          name: input.sender.name,
-          phone_number: input.sender.phoneNumber,
-          country_code: input.sender.countryCode,
-          province: input.sender.province,
-          city: input.sender.city,
-          address_lines: input.sender.addressLines,
-          address_lines1: input.sender.addressLines1,
-          address_lines2: input.sender.addressLines2,
-          postal_code: input.sender.postalCode,
-        },
-        goods_list: input.goodsList.map((item) => ({
-          name_local: item.nameLocal,
-          name_en: item.nameEn,
-          quantity: item.quantity,
-          ...item,
-        })),
+        sender: normalizeReturnSender(input.sender),
+        goods_list: input.goodsList.map(normalizeReturnGoodsItem),
         label_type: input.labelType,
-        receiver: input.receiver
-          ? {
-              name: input.receiver.name,
-              company: input.receiver.company,
-              phone_number: input.receiver.phoneNumber,
-              country_code: input.receiver.countryCode,
-              province: input.receiver.province,
-              city: input.receiver.city,
-              address_lines: input.receiver.addressLines,
-              address_lines1: input.receiver.addressLines1,
-              address_lines2: input.receiver.addressLines2,
-              postal_code: input.receiver.postalCode,
-              email: input.receiver.email,
-            }
-          : undefined,
+        receiver: normalizeReturnReceiver(input.receiver),
         ioss_number: input.iossNumber,
         vat_number: input.vatNumber,
         eori_number: input.eoriNumber,
@@ -241,6 +215,79 @@ export class ReturnsResource extends ResourceNamespace {
       },
     });
   }
+
+  createTransferOrder(
+    input: CreateReturnTransferRequest,
+    options: TransportRequestOptions = {},
+  ): Promise<TransportResponse<CreateReturnTransferResponse>> {
+    assertValidCreateReturnTransferRequest(input);
+
+    return this.request<CreateReturnTransferResponse>({
+      ...options,
+      method: "POST",
+      path: "/v1/openapi/order/transfer",
+      body: {
+        order_codes: input.orderCodes,
+        ioss_number: input.iossNumber,
+        vat_number: input.vatNumber,
+        eori_number: input.eoriNumber,
+        receiver: normalizeReturnReceiver(input.receiver),
+        goods_list: input.goodsList?.map(normalizeReturnGoodsItem),
+      },
+    });
+  }
+}
+
+function normalizeReturnSender(
+  sender: CreateReturnOrderRequest["sender"],
+): Record<string, unknown> {
+  return {
+    name: sender.name,
+    phone_number: sender.phoneNumber,
+    country_code: sender.countryCode,
+    province: sender.province,
+    city: sender.city,
+    address_lines: sender.addressLines,
+    address_lines1: sender.addressLines1,
+    address_lines2: sender.addressLines2,
+    postal_code: sender.postalCode,
+  };
+}
+
+function normalizeReturnReceiver(
+  receiver:
+    | CreateReturnOrderRequest["receiver"]
+    | CreateReturnTransferRequest["receiver"]
+    | undefined,
+): Record<string, unknown> | undefined {
+  if (!receiver) {
+    return undefined;
+  }
+
+  return {
+    name: receiver.name,
+    company: receiver.company,
+    phone_number: receiver.phoneNumber,
+    country_code: receiver.countryCode,
+    province: receiver.province,
+    city: receiver.city,
+    address_lines: receiver.addressLines,
+    address_lines1: receiver.addressLines1,
+    address_lines2: receiver.addressLines2,
+    postal_code: receiver.postalCode,
+    email: receiver.email,
+  };
+}
+
+function normalizeReturnGoodsItem(
+  item: CreateReturnOrderRequest["goodsList"][number],
+): Record<string, unknown> {
+  return {
+    ...item,
+    name_local: item.nameLocal,
+    name_en: item.nameEn,
+    quantity: item.quantity,
+  };
 }
 
 function normalizeArrayResponse<TArray extends unknown[]>(

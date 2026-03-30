@@ -1,6 +1,6 @@
 import { defineCommand } from "citty";
 import { createClientFromArgs } from "../config.ts";
-import { printError, printJson } from "../output.ts";
+import { printError, printJson, readDataInput } from "../output.ts";
 import { globalArgs, type GlobalArgs } from "../shared.ts";
 
 export const pricingCommand = defineCommand({
@@ -78,6 +78,28 @@ export const pricingCommand = defineCommand({
             sizeUnit: args["size-unit"] as any,
             origin: args.origin,
           });
+          printJson(result);
+        } catch (error: any) {
+          printError(error.message);
+          process.exit(1);
+        }
+      },
+    }),
+    "trial-v2": defineCommand({
+      meta: { name: "trial-v2", description: "Get price trial V2 estimates" },
+      args: {
+        ...globalArgs,
+        data: {
+          type: "string",
+          description: "JSON payload or @file path (e.g. --data @trial-v2.json)",
+          required: true,
+        },
+      },
+      async run({ args }) {
+        try {
+          const client = createClientFromArgs(args as unknown as GlobalArgs);
+          const input = await readDataInput(args.data);
+          const result = await client.pricing.getPriceTrialV2(input as any);
           printJson(result);
         } catch (error: any) {
           printError(error.message);

@@ -74,6 +74,28 @@ export const returnsCommand = defineCommand({
         }
       },
     }),
+    transfer: defineCommand({
+      meta: { name: "transfer", description: "Create a return transfer order" },
+      args: {
+        ...globalArgs,
+        data: {
+          type: "string",
+          description: "JSON payload or @file path (e.g. --data @transfer.json)",
+          required: true,
+        },
+      },
+      async run({ args }) {
+        try {
+          const client = createClientFromArgs(args as unknown as GlobalArgs);
+          const input = await readDataInput(args.data);
+          const result = await client.returns.createTransferOrder(input as any);
+          printJson(result);
+        } catch (error: any) {
+          printError(error.message);
+          process.exit(1);
+        }
+      },
+    }),
     cancel: defineCommand({
       meta: { name: "cancel", description: "Cancel return orders" },
       args: {

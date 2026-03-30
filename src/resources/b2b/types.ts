@@ -35,6 +35,78 @@ export interface HoldB2BOrderRequest {
   remark: string;
 }
 
+export interface CreateB2BOrderRequest {
+  customerOrderNumber?: string;
+  productCode: string;
+  countryCode: string;
+  einNumber?: string;
+  importCompany?: string;
+  bondExpireTime?: string;
+  referenceId?: string;
+  goodsType?: 0 | 1 | 2;
+  currency: string;
+  couponCode?: string;
+  extraServices?: Array<Record<string, unknown>>;
+  receiver: CreateB2BOrderReceiver;
+  packages: CreateB2BOrderPackage[];
+  deliveryInfo: CreateB2BOrderDeliveryInfo;
+  sourceCode?: string;
+}
+
+export type CreateB2BOrderReceiver = {
+  name?: string;
+  company?: string;
+  countryCode?: string;
+  province?: string;
+  city?: string;
+  addressLines?: string[];
+  postalCode?: string;
+  phoneNumber?: string;
+  email?: string;
+  street?: string;
+  houseNumber?: string;
+} & Record<string, unknown>;
+
+export type CreateB2BOrderDeclarationItem = {
+  quantity?: number;
+  unitPrice?: number;
+  unitWeight?: number;
+  nameCn?: string;
+  nameEn?: string;
+  hsCode?: string;
+  goodsUrl?: string;
+  currency?: string;
+  material?: string;
+  purpose?: string;
+  brand?: string;
+  model?: string;
+  quantityUnit?: string;
+  remark?: string;
+} & Record<string, unknown>;
+
+export type CreateB2BOrderPackage = {
+  weight?: number;
+  length?: number;
+  width?: number;
+  height?: number;
+  boxNumber?: string;
+  referenceId?: string;
+  declarationInfo?: CreateB2BOrderDeclarationItem[];
+} & Record<string, unknown>;
+
+export type CreateB2BOrderDeliveryInfo = {
+  deliveryType?: number;
+  collectAddress?: string;
+  collectStartTime?: string;
+  collectEndTime?: string;
+} & Record<string, unknown>;
+
+export type CreateB2BOrderResponse = {
+  waybill_number?: string;
+  customer_order_number?: string;
+  tracking_number?: string;
+} & Record<string, unknown>;
+
 export type B2BLabelResponse = {
   order_number?: string;
   url?: string;
@@ -239,6 +311,42 @@ export function assertValidHoldB2BOrderRequest(input: HoldB2BOrderRequest): void
   }
 }
 
+export function assertValidCreateB2BOrderRequest(input: CreateB2BOrderRequest): void {
+  assertProductCode(input.productCode);
+  assertCountryCode(input.countryCode, "countryCode");
+
+  const trimmedCurrency = input.currency.trim();
+  if (!trimmedCurrency) {
+    throw validationError("currency is required.");
+  }
+
+  if (!input.receiver || typeof input.receiver !== "object" || Array.isArray(input.receiver)) {
+    throw validationError("receiver is required.");
+  }
+
+  if (
+    !input.deliveryInfo ||
+    typeof input.deliveryInfo !== "object" ||
+    Array.isArray(input.deliveryInfo)
+  ) {
+    throw validationError("deliveryInfo is required.");
+  }
+
+  if (!Array.isArray(input.packages) || input.packages.length === 0) {
+    throw validationError("packages must contain at least one package.");
+  }
+
+  input.packages.forEach((packageItem, index) => {
+    if (!packageItem || typeof packageItem !== "object" || Array.isArray(packageItem)) {
+      throw validationError(`packages[${index}] must be an object.`);
+    }
+  });
+
+  if (input.goodsType !== undefined && ![0, 1, 2].includes(input.goodsType)) {
+    throw validationError("goodsType must be one of 0, 1, or 2.");
+  }
+}
+
 function assertOrderNumber(orderNumber: string): void {
   const trimmed = orderNumber.trim();
 
@@ -272,6 +380,18 @@ function assertWaybillNumber(waybillNumber: string): void {
 
   if (trimmed.length > 50) {
     throw validationError("waybillNumber must be between 1 and 50 characters.");
+  }
+}
+
+function assertCountryCode(countryCode: string, fieldName: string): void {
+  const trimmed = countryCode.trim();
+
+  if (!trimmed) {
+    throw validationError(`${fieldName} is required.`);
+  }
+
+  if (trimmed.length !== 2) {
+    throw validationError(`${fieldName} must be a 2-letter country code.`);
   }
 }
 

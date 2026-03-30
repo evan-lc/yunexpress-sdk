@@ -11,7 +11,7 @@ TypeScript SDK and CLI for the [YunExpress OpenAPI](https://openapi.yunexpress.c
 - Replaceable signer, token provider, and request/response interceptor hooks
 - Retry-aware HTTP transport with configurable retry policy
 - Unified error hierarchy (`AuthenticationError`, `RateLimitError`, `UpstreamApiError`, `RequestExecutionError`)
-- Implemented coverage for direct orders, B2B lookups, labels, tracking, pricing, billing, exception queries and mutations, return creation and follow-up queries, and basic lookups
+- Implemented coverage for direct orders, B2B creation and management, labels, tracking, pricing, billing, exception queries and mutations, return order flows, and basic lookup/registration endpoints
 - CLI with the implemented API operations available as subcommands
 
 ## Install
@@ -139,7 +139,7 @@ The input is normalized to the documented query parameter `order_number`. The re
 
 The implemented resources below are typed. Access them as `client.<namespace>.<method>(...)`.
 
-The official YunExpress docs still expose additional B2B, return-service, and supporting file-upload endpoints that are not yet modeled in this SDK.
+The only remaining official doc entries not modeled in this SDK are helper pages without stable request URLs, such as the generic file-upload page and related precondition-service helper entries.
 
 | Namespace      | Method                        | Endpoint                                             |
 | -------------- | ----------------------------- | ---------------------------------------------------- |
@@ -152,6 +152,7 @@ The official YunExpress docs still expose additional B2B, return-service, and su
 |                | `holdOrder`                   | `POST /v1/order/hold`                                |
 |                | `getPickupPoints`             | `POST /v1/pickup/get`                                |
 | **b2b**        | `getWaybillDetail`            | `GET  /v1/order/b2b/info/get`                        |
+|                | `createOrder`                 | `POST /v1/order/b2b/create`                          |
 |                | `getLabel`                    | `GET  /v1/order/b2b/label/get`                       |
 |                | `getLastMileCarriers`         | `POST /v1/order/b2b/last-mile/get`                   |
 |                | `getProducts`                 | `GET  /v1/basic-data/b2b/products/getlist`           |
@@ -172,6 +173,7 @@ The official YunExpress docs still expose additional B2B, return-service, and su
 |                | `cancelSubscriptionByProduct` | `POST /v1/track-service/unsubscribe-by-shipping`     |
 |                | `getSubscriptionByProduct`    | `GET  /v1/track-service/subscribe-by-shipping/get`   |
 | **pricing**    | `getPriceTrial`               | `GET  /v1/price-trial/get`                           |
+|                | `getPriceTrialV2`             | `POST /v1/price-trial/get_V2`                        |
 | **billing**    | `getBillingDetail`            | `GET  /v1/bill/details/list`                         |
 |                | `getFreightDetail`            | `GET  /v1/order/fee-details/get`                     |
 | **exceptions** | `getReceiveAddresses`         | `GET  /v1/issue/get-receive-address`                 |
@@ -192,6 +194,7 @@ The official YunExpress docs still expose additional B2B, return-service, and su
 | **returns**    | `getOrderDetail`              | `GET  /v1/openapi/order/detail`                      |
 |                | `getTransferDetail`           | `GET  /v1/openapi/order/transferdetail`              |
 |                | `createReturnOrder`           | `POST /v1/openapi/order/add`                         |
+|                | `createTransferOrder`         | `POST /v1/openapi/order/transfer`                    |
 |                | `cancelOrders`                | `POST /v1/openapi/order/cancel`                      |
 |                | `getLabels`                   | `POST /v1/openapi/order/downloadlabels`              |
 |                | `getProducts`                 | `GET  /v1/openapi/product/list`                      |
@@ -200,6 +203,8 @@ The official YunExpress docs still expose additional B2B, return-service, and su
 |                | `processArrival`              | `POST /v1/openapi/order/operation`                   |
 | **basic**      | `getCountryCodes`             | `GET  /v1/basic-data/countries/getlist`              |
 |                | `getProducts`                 | `GET  /v1/basic-data/products/getlist`               |
+|                | `registerIoss`                | `POST /v1/precondition-service/ioss/register`        |
+|                | `registerVat`                 | `POST /v1/precondition-service/vat/register`         |
 
 ## Low-Level Request Access
 
@@ -292,6 +297,8 @@ Use `yunexpress <command> --help` to see subcommands and options.
 # Basic data lookups
 yunexpress basic countries
 yunexpress basic products --country-code US
+yunexpress basic register-ioss --data @ioss.json
+yunexpress basic register-vat --data @vat.json
 
 # Orders
 yunexpress orders create --data @payload.json
@@ -306,6 +313,7 @@ yunexpress orders hold --waybill-number YT001 --remark "Awaiting docs"
 yunexpress orders pickup-points --country-code DE --postal-code 10115
 
 # B2B
+yunexpress b2b create --data @b2b-order.json
 yunexpress b2b get --order-number YT2231431267000001
 yunexpress b2b label --order-number YT2231431267000001
 yunexpress b2b last-mile-carriers --waybill-numbers YT001,YT002
@@ -333,6 +341,7 @@ yunexpress tracking get-product-sub --product-code STANDARD
 
 # Pricing
 yunexpress pricing trial --country-code US --weight 0.5 --weight-unit KG
+yunexpress pricing trial-v2 --data @trial-v2.json
 
 # Billing
 yunexpress billing detail --bill-code BILL202403 --bill-type N
@@ -359,6 +368,7 @@ yunexpress exceptions modify-declaration-info --data @modify-declaration.json
 yunexpress returns get --order-code RT10001
 yunexpress returns transfer-detail --transfer-code TF10001
 yunexpress returns create --data @return-payload.json
+yunexpress returns transfer --data @transfer.json
 yunexpress returns cancel --order-codes RT10001,RT10002
 yunexpress returns labels --order-codes RT10001
 yunexpress returns products
@@ -369,7 +379,7 @@ yunexpress returns operation --order-codes RT10001,RT10002 --operation-type 3
 
 ### Data Input
 
-For commands with complex payloads (`orders create`, `returns create`, and many `exceptions` mutations), use the `--data` flag:
+For commands with complex payloads (`orders create`, `b2b create`, `pricing trial-v2`, `returns create`, `returns transfer`, `basic register-*`, and many `exceptions` mutations), use the `--data` flag:
 
 | Format      | Example                          |
 | ----------- | -------------------------------- |

@@ -1,7 +1,10 @@
 import { describe, expect, test, vi } from "vite-plus/test";
 import { YunExpressClient, type FetchLike } from "../../src/index.ts";
 import { NoopRequestSigner } from "../../src/auth/signing/RequestSigner.ts";
-import { assertValidCreateReturnOrderRequest } from "../../src/resources/returns/types.ts";
+import {
+  assertValidCreateReturnOrderRequest,
+  assertValidCreateReturnTransferRequest,
+} from "../../src/resources/returns/types.ts";
 import { RequestExecutionError } from "../../src/errors/RequestExecutionError.ts";
 import type { CreateReturnOrderRequest } from "../../src/resources/returns/types.ts";
 
@@ -123,6 +126,17 @@ describe("assertValidCreateReturnOrderRequest", () => {
       error = e;
     }
     expect(error).toBeInstanceOf(RequestExecutionError);
+  });
+});
+
+describe("assertValidCreateReturnTransferRequest", () => {
+  test("requires receiver", () => {
+    expect(() =>
+      assertValidCreateReturnTransferRequest({
+        orderCodes: ["RT-1"],
+        receiver: undefined as any,
+      }),
+    ).toThrow("receiver is required");
   });
 });
 
@@ -307,5 +321,64 @@ describe("ReturnsResource request construction", () => {
       orderCodes: ["RT-4", "RT-5"],
       operationType: 3,
     });
+  });
+
+  test("createTransferOrder sends POST with transfer payload", async () => {
+    const fetchMock = vi.fn(async (input: any, init: any) => {
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+      );
+      expect(url.pathname).toBe("/v1/openapi/order/transfer");
+      expect(JSON.parse(init.body)).toEqual({
+        order_codes: ["RT-6"],
+        ioss_number: "IM1234567890",
+        vat_number: "VAT123",
+        eori_number: "EORI123",
+        receiver: {
+          name: "Bob",
+          company: "Importer Co",
+          phone_number: "123456",
+          country_code: "DE",
+          province: "BE",
+          city: "Berlin",
+          address_lines: "Street 1",
+          address_lines1: undefined,
+          address_lines2: undefined,
+          postal_code: "10115",
+          email: "bob@example.com",
+        },
+        goods_list: [
+          {
+            nameLocal: "衬衫",
+            nameEn: "Shirt",
+            quantity: 1,
+            name_local: "衬衫",
+            name_en: "Shirt",
+          },
+        ],
+      });
+      return jsonResponse({ success: true, result: { order_code: "RTX-1" } });
+    });
+
+    const client = createClient(fetchMock);
+    const response = await client.returns.createTransferOrder({
+      orderCodes: ["RT-6"],
+      iossNumber: "IM1234567890",
+      vatNumber: "VAT123",
+      eoriNumber: "EORI123",
+      receiver: {
+        name: "Bob",
+        company: "Importer Co",
+        phoneNumber: "123456",
+        countryCode: "DE",
+        province: "BE",
+        city: "Berlin",
+        addressLines: "Street 1",
+        postalCode: "10115",
+        email: "bob@example.com",
+      },
+      goodsList: [{ nameLocal: "衬衫", nameEn: "Shirt", quantity: 1 }],
+    });
+    expect(response.data.order_code).toBe("RTX-1");
   });
 });

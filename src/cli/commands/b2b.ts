@@ -1,11 +1,33 @@
 import { defineCommand } from "citty";
 import { createClientFromArgs } from "../config.ts";
-import { printError, printJson } from "../output.ts";
+import { printError, printJson, readDataInput } from "../output.ts";
 import { globalArgs, type GlobalArgs } from "../shared.ts";
 
 export const b2bCommand = defineCommand({
   meta: { name: "b2b", description: "B2B order operations" },
   subCommands: {
+    create: defineCommand({
+      meta: { name: "create", description: "Create a B2B order" },
+      args: {
+        ...globalArgs,
+        data: {
+          type: "string",
+          description: "JSON payload or @file path (e.g. --data @b2b-order.json)",
+          required: true,
+        },
+      },
+      async run({ args }) {
+        try {
+          const client = createClientFromArgs(args as unknown as GlobalArgs);
+          const input = await readDataInput(args.data);
+          const result = await client.b2b.createOrder(input as any);
+          printJson(result);
+        } catch (error: any) {
+          printError(error.message);
+          process.exit(1);
+        }
+      },
+    }),
     get: defineCommand({
       meta: { name: "get", description: "Get B2B order detail" },
       args: {

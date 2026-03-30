@@ -62,6 +62,12 @@ export { ResourceNamespace } from "./resources/ResourceNamespace.ts";
 export type {
   CancelB2BOrderRequest,
   B2BCollectWarehouseItem,
+  CreateB2BOrderDeclarationItem,
+  CreateB2BOrderDeliveryInfo,
+  CreateB2BOrderPackage,
+  CreateB2BOrderReceiver,
+  CreateB2BOrderRequest,
+  CreateB2BOrderResponse,
   B2BDeliveryInfo,
   B2BLabelResponse,
   B2BLastMileCarrierItem,
@@ -150,6 +156,9 @@ export type {
 export type {
   GetPriceTrialRequest,
   GetPriceTrialResponse,
+  GetPriceTrialV2Request,
+  GetPriceTrialV2Response,
+  PriceTrialV2DetailEntity,
   PriceTrialItem,
 } from "./resources/pricing/types.ts";
 
@@ -189,6 +198,8 @@ export type {
 
 export type {
   CancelReturnOrdersRequest,
+  CreateReturnTransferRequest,
+  CreateReturnTransferResponse,
   CreateReturnOrderRequest,
   CreateReturnOrderResponse,
   GetReturnLabelsRequest,
@@ -231,6 +242,8 @@ export type {
   GetProductsRequest,
   ProductItem,
   GetProductsResponse,
+  RegisterIossRequest,
+  RegisterVatRequest,
 } from "./resources/basic/types.ts";
 
 export {

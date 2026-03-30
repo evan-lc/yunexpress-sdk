@@ -97,12 +97,23 @@ export interface ProcessReturnArrivalRequest {
   operationType: ReturnArrivalOperationType;
 }
 
+export interface CreateReturnTransferRequest {
+  orderCodes: string[];
+  receiver: ReturnOrderReceiver;
+  goodsList?: ReturnOrderGoodsItem[];
+  iossNumber?: string;
+  vatNumber?: string;
+  eoriNumber?: string;
+}
+
 export type ReturnLabelItem = {
   order_code?: string;
   label_url?: string;
 } & Record<string, unknown>;
 
 export type GetReturnLabelsResponse = ReturnLabelItem[];
+
+export type CreateReturnTransferResponse = CreateReturnOrderResponse;
 
 export type ReturnProductExtraService = {
   extra_code?: string;
@@ -229,6 +240,18 @@ export function assertValidProcessReturnArrivalRequest(input: ProcessReturnArriv
 
   if (![1, 2, 3].includes(input.operationType)) {
     throw validationError("operationType must be one of 1, 2, or 3.");
+  }
+}
+
+export function assertValidCreateReturnTransferRequest(input: CreateReturnTransferRequest): void {
+  assertCodeArray(input.orderCodes, "orderCodes", 500);
+
+  if (!input.receiver || typeof input.receiver !== "object" || Array.isArray(input.receiver)) {
+    throw validationError("receiver is required.");
+  }
+
+  if (input.goodsList !== undefined && !Array.isArray(input.goodsList)) {
+    throw validationError("goodsList must be an array when provided.");
   }
 }
 

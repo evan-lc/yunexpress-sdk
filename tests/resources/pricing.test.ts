@@ -1,7 +1,10 @@
 import { describe, expect, test, vi } from "vite-plus/test";
 import { YunExpressClient, type FetchLike } from "../../src/index.ts";
 import { NoopRequestSigner } from "../../src/auth/signing/RequestSigner.ts";
-import { assertValidGetPriceTrialRequest } from "../../src/resources/pricing/types.ts";
+import {
+  assertValidGetPriceTrialRequest,
+  assertValidGetPriceTrialV2Request,
+} from "../../src/resources/pricing/types.ts";
 import { RequestExecutionError } from "../../src/errors/RequestExecutionError.ts";
 
 function jsonResponse(body: unknown): Response {
@@ -69,6 +72,18 @@ describe("assertValidGetPriceTrialRequest", () => {
   });
 });
 
+describe("assertValidGetPriceTrialV2Request", () => {
+  test("requires detailEntities for B2B income type", () => {
+    expect(() =>
+      assertValidGetPriceTrialV2Request({
+        countryCode: "US",
+        weight: 1.5,
+        incomeType: "B2B",
+      }),
+    ).toThrow("detailEntities");
+  });
+});
+
 describe("PricingResource request construction", () => {
   test("getPriceTrial sends GET with all query params", async () => {
     const fetchMock = vi.fn(async (input: any) => {
@@ -92,5 +107,50 @@ describe("PricingResource request construction", () => {
       packageType: "C",
       postalCode: "12345",
     });
+  });
+
+  test("getPriceTrialV2 sends POST with body payload", async () => {
+    const fetchMock = vi.fn(async (input: any, init: any) => {
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+      );
+      expect(url.pathname).toBe("/v1/price-trial/get_V2");
+      expect(JSON.parse(init.body)).toEqual({
+        country_code: "US",
+        weight: 10,
+        weight_unit: "KG",
+        package_type: "C",
+        postal_code: "90001",
+        product_group_code: "DH",
+        pieces: 2,
+        length: 20,
+        width: 10,
+        height: 8,
+        size_unit: "CM",
+        origin: "YT-SZ",
+        income_type: "B2B",
+        detail_entities: [{ box_no: "BOX-1", weight: 5 }],
+      });
+      return jsonResponse({ success: true, result: [{ product_code: "B2BUAT" }] });
+    });
+
+    const client = createClient(fetchMock);
+    const response = await client.pricing.getPriceTrialV2({
+      countryCode: "US",
+      weight: 10,
+      weightUnit: "KG",
+      packageType: "C",
+      postalCode: "90001",
+      productGroupCode: "DH",
+      pieces: 2,
+      length: 20,
+      width: 10,
+      height: 8,
+      sizeUnit: "CM",
+      origin: "YT-SZ",
+      incomeType: "B2B",
+      detailEntities: [{ box_no: "BOX-1", weight: 5 }],
+    });
+    expect(response.data[0]?.product_code).toBe("B2BUAT");
   });
 });
