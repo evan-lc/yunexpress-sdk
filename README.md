@@ -159,6 +159,8 @@ The official YunExpress docs still expose additional B2B, return-service, and su
 |                | `getWarehouseAddresses`       | `GET  /v1/warehouse/b2b/address/get`                 |
 |                | `getSelfWarehouses`           | `GET  /v1/basic-data/b2b/products/getselfwarehouses` |
 |                | `getCollectWarehouses`        | `GET  /api/warehouse-info/get`                       |
+|                | `cancelOrder`                 | `POST /v1/order/b2b/cancel`                          |
+|                | `holdOrder`                   | `POST /v1/order/b2b/hold`                            |
 | **labels**     | `getLabel`                    | `GET  /v1/order/label/get`                           |
 |                | `getShippingDocs`             | `GET  /v1/order/shipping-docs/get`                   |
 |                | `getPod`                      | `GET  /v1/order/pod/get`                             |
@@ -195,6 +197,7 @@ The official YunExpress docs still expose additional B2B, return-service, and su
 |                | `getProducts`                 | `GET  /v1/openapi/product/list`                      |
 |                | `getWarehouses`               | `GET  /v1/openapi/product/warehouse-list`            |
 |                | `getSendTypes`                | `GET  /v1/openapi/product/send-type-list`            |
+|                | `processArrival`              | `POST /v1/openapi/order/operation`                   |
 | **basic**      | `getCountryCodes`             | `GET  /v1/basic-data/countries/getlist`              |
 |                | `getProducts`                 | `GET  /v1/basic-data/products/getlist`               |
 
@@ -311,6 +314,8 @@ yunexpress b2b address-types
 yunexpress b2b addresses --address-type 2 --secondary-address-type 7 --country-code US
 yunexpress b2b self-warehouses --product-code B2BUAT
 yunexpress b2b collect-warehouses
+yunexpress b2b cancel --waybill-number YT001
+yunexpress b2b hold --waybill-number YT001 --remark "Awaiting B2B docs"
 
 # Labels and documents
 yunexpress labels get --order-number YT2231431267000001
@@ -359,6 +364,7 @@ yunexpress returns labels --order-codes RT10001
 yunexpress returns products
 yunexpress returns warehouses --product-code DE-DHL-RT --country-code DE
 yunexpress returns send-types --product-code DE-DHL-RT --sender-country DE --warehouse-country DE
+yunexpress returns operation --order-codes RT10001,RT10002 --operation-type 3
 ```
 
 ### Data Input

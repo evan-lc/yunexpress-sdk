@@ -288,4 +288,24 @@ describe("ReturnsResource request construction", () => {
     });
     expect(response.data[0]?.shipping_method).toBe("RTZD");
   });
+
+  test("processArrival sends POST with order_codes and type", async () => {
+    const fetchMock = vi.fn(async (input: any, init: any) => {
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+      );
+      expect(url.pathname).toBe("/v1/openapi/order/operation");
+      expect(JSON.parse(init.body)).toEqual({
+        order_codes: ["RT-4", "RT-5"],
+        type: 3,
+      });
+      return jsonResponse({ success: true, result: null });
+    });
+
+    const client = createClient(fetchMock);
+    await client.returns.processArrival({
+      orderCodes: ["RT-4", "RT-5"],
+      operationType: 3,
+    });
+  });
 });

@@ -199,5 +199,34 @@ export const returnsCommand = defineCommand({
         }
       },
     }),
+    operation: defineCommand({
+      meta: { name: "operation", description: "Process return orders after warehouse arrival" },
+      args: {
+        ...globalArgs,
+        "order-codes": {
+          type: "string",
+          description: "Comma-separated return order codes",
+          required: true,
+        },
+        "operation-type": {
+          type: "string",
+          description: "Operation type: 1=discard, 2=destroy, 3=extend-storage",
+          required: true,
+        },
+      },
+      async run({ args }) {
+        try {
+          const client = createClientFromArgs(args as unknown as GlobalArgs);
+          const result = await client.returns.processArrival({
+            orderCodes: args["order-codes"].split(",").map((value) => value.trim()),
+            operationType: Number(args["operation-type"]) as 1 | 2 | 3,
+          });
+          printJson(result);
+        } catch (error: any) {
+          printError(error.message);
+          process.exit(1);
+        }
+      },
+    }),
   },
 });

@@ -153,4 +153,38 @@ describe("B2BResource request construction", () => {
     const response = await client.b2b.getCollectWarehouses();
     expect(response.data[0]?.collect_address_code).toBe("W005948");
   });
+
+  test("cancelOrder sends POST with the official B2B cancel endpoint", async () => {
+    const fetchMock = vi.fn(async (input: any, init: any) => {
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+      );
+      expect(url.pathname).toBe("/v1/order/b2b/cancel");
+      expect(JSON.parse(init.body)).toEqual({ waybill_number: "WB-B2B-3" });
+      return jsonResponse({ success: true, result: null });
+    });
+
+    const client = createClient(fetchMock);
+    await client.b2b.cancelOrder({ waybillNumber: "WB-B2B-3" });
+  });
+
+  test("holdOrder sends POST with remark to the official B2B hold endpoint", async () => {
+    const fetchMock = vi.fn(async (input: any, init: any) => {
+      const url = new URL(
+        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+      );
+      expect(url.pathname).toBe("/v1/order/b2b/hold");
+      expect(JSON.parse(init.body)).toEqual({
+        waybill_number: "WB-B2B-4",
+        remark: "customer requested hold",
+      });
+      return jsonResponse({ success: true, result: null });
+    });
+
+    const client = createClient(fetchMock);
+    await client.b2b.holdOrder({
+      waybillNumber: "WB-B2B-4",
+      remark: "customer requested hold",
+    });
+  });
 });

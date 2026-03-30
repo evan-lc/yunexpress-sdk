@@ -60,6 +60,7 @@ export { BillingResource } from "./resources/billing/BillingResource.ts";
 export { BasicResource } from "./resources/basic/BasicResource.ts";
 export { ResourceNamespace } from "./resources/ResourceNamespace.ts";
 export type {
+  CancelB2BOrderRequest,
   B2BCollectWarehouseItem,
   B2BDeliveryInfo,
   B2BLabelResponse,
@@ -84,6 +85,7 @@ export type {
   GetB2BWarehouseAddressesResponse,
   GetB2BWaybillDetailRequest,
   GetB2BWaybillDetailResponse,
+  HoldB2BOrderRequest,
 } from "./resources/b2b/types.ts";
 export type {
   ContactParty,
@@ -200,6 +202,8 @@ export type {
   GetReturnTransferDetailResponse,
   GetReturnWarehousesRequest,
   GetReturnWarehousesResponse,
+  ProcessReturnArrivalRequest,
+  ReturnArrivalOperationType,
   ReturnOrderSender,
   ReturnOrderReceiver,
   ReturnOrderGoodsItem,

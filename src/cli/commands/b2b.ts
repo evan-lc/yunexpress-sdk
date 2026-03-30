@@ -187,5 +187,57 @@ export const b2bCommand = defineCommand({
         }
       },
     }),
+    cancel: defineCommand({
+      meta: { name: "cancel", description: "Cancel a B2B order" },
+      args: {
+        ...globalArgs,
+        "waybill-number": {
+          type: "string",
+          description: "Waybill number",
+          required: true,
+        },
+      },
+      async run({ args }) {
+        try {
+          const client = createClientFromArgs(args as unknown as GlobalArgs);
+          const result = await client.b2b.cancelOrder({
+            waybillNumber: args["waybill-number"],
+          });
+          printJson(result);
+        } catch (error: any) {
+          printError(error.message);
+          process.exit(1);
+        }
+      },
+    }),
+    hold: defineCommand({
+      meta: { name: "hold", description: "Hold a B2B order" },
+      args: {
+        ...globalArgs,
+        "waybill-number": {
+          type: "string",
+          description: "Waybill number",
+          required: true,
+        },
+        remark: {
+          type: "string",
+          description: "Hold remark",
+          required: true,
+        },
+      },
+      async run({ args }) {
+        try {
+          const client = createClientFromArgs(args as unknown as GlobalArgs);
+          const result = await client.b2b.holdOrder({
+            waybillNumber: args["waybill-number"],
+            remark: args.remark,
+          });
+          printJson(result);
+        } catch (error: any) {
+          printError(error.message);
+          process.exit(1);
+        }
+      },
+    }),
   },
 });

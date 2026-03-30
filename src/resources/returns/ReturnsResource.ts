@@ -9,6 +9,7 @@ import {
   assertValidGetReturnSendTypesRequest,
   assertValidGetReturnTransferDetailRequest,
   assertValidGetReturnWarehousesRequest,
+  assertValidProcessReturnArrivalRequest,
   type CancelReturnOrdersRequest,
   type CreateReturnOrderRequest,
   type CreateReturnOrderResponse,
@@ -23,6 +24,7 @@ import {
   type GetReturnTransferDetailResponse,
   type GetReturnWarehousesRequest,
   type GetReturnWarehousesResponse,
+  type ProcessReturnArrivalRequest,
 } from "./types.ts";
 
 export class ReturnsResource extends ResourceNamespace {
@@ -221,6 +223,23 @@ export class ReturnsResource extends ResourceNamespace {
         Array.isArray(data) ? (data as GetReturnSendTypesResponse) : [],
       ),
     );
+  }
+
+  processArrival(
+    input: ProcessReturnArrivalRequest,
+    options: TransportRequestOptions = {},
+  ): Promise<TransportResponse<void>> {
+    assertValidProcessReturnArrivalRequest(input);
+
+    return this.request<void>({
+      ...options,
+      method: "POST",
+      path: "/v1/openapi/order/operation",
+      body: {
+        order_codes: input.orderCodes,
+        type: input.operationType,
+      },
+    });
   }
 }
 

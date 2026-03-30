@@ -26,6 +26,15 @@ export interface GetB2BSelfWarehousesRequest {
   productCode: string;
 }
 
+export interface CancelB2BOrderRequest {
+  waybillNumber: string;
+}
+
+export interface HoldB2BOrderRequest {
+  waybillNumber: string;
+  remark: string;
+}
+
 export type B2BLabelResponse = {
   order_number?: string;
   url?: string;
@@ -212,6 +221,24 @@ export function assertValidGetB2BSelfWarehousesRequest(input: GetB2BSelfWarehous
   assertProductCode(input.productCode);
 }
 
+export function assertValidCancelB2BOrderRequest(input: CancelB2BOrderRequest): void {
+  assertWaybillNumber(input.waybillNumber);
+}
+
+export function assertValidHoldB2BOrderRequest(input: HoldB2BOrderRequest): void {
+  assertWaybillNumber(input.waybillNumber);
+
+  const trimmedRemark = input.remark.trim();
+
+  if (!trimmedRemark) {
+    throw validationError("remark is required.");
+  }
+
+  if (trimmedRemark.length > 255) {
+    throw validationError("remark must be between 1 and 255 characters.");
+  }
+}
+
 function assertOrderNumber(orderNumber: string): void {
   const trimmed = orderNumber.trim();
 
@@ -233,6 +260,18 @@ function assertProductCode(productCode: string): void {
 
   if (trimmed.length > 50) {
     throw validationError("productCode must be between 1 and 50 characters.");
+  }
+}
+
+function assertWaybillNumber(waybillNumber: string): void {
+  const trimmed = waybillNumber.trim();
+
+  if (!trimmed) {
+    throw validationError("waybillNumber is required.");
+  }
+
+  if (trimmed.length > 50) {
+    throw validationError("waybillNumber must be between 1 and 50 characters.");
   }
 }
 

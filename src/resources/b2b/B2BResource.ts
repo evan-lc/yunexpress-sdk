@@ -2,12 +2,15 @@ import type { YunExpressClient } from "../../client/YunExpressClient.ts";
 import type { TransportRequestOptions, TransportResponse } from "../../http/transport.ts";
 import { ResourceNamespace } from "../ResourceNamespace.ts";
 import {
+  assertValidCancelB2BOrderRequest,
   assertValidGetB2BLabelRequest,
   assertValidGetB2BLastMileCarriersRequest,
   assertValidGetB2BProductsRequest,
   assertValidGetB2BSelfWarehousesRequest,
   assertValidGetB2BWarehouseAddressesRequest,
   assertValidGetB2BWaybillDetailRequest,
+  assertValidHoldB2BOrderRequest,
+  type CancelB2BOrderRequest,
   type B2BCollectWarehouseItem,
   type B2BLabelResponse,
   type B2BLastMileCarrierItem,
@@ -28,6 +31,7 @@ import {
   type GetB2BWarehouseAddressesResponse,
   type GetB2BWaybillDetailRequest,
   type GetB2BWaybillDetailResponse,
+  type HoldB2BOrderRequest,
 } from "./types.ts";
 
 export class B2BResource extends ResourceNamespace {
@@ -204,6 +208,39 @@ export class B2BResource extends ResourceNamespace {
         Array.isArray(data) ? (data as B2BCollectWarehouseItem[]) : [],
       ),
     );
+  }
+
+  cancelOrder(
+    input: CancelB2BOrderRequest,
+    options: TransportRequestOptions = {},
+  ): Promise<TransportResponse<void>> {
+    assertValidCancelB2BOrderRequest(input);
+
+    return this.request<void>({
+      ...options,
+      method: "POST",
+      path: "/v1/order/b2b/cancel",
+      body: {
+        waybill_number: input.waybillNumber,
+      },
+    });
+  }
+
+  holdOrder(
+    input: HoldB2BOrderRequest,
+    options: TransportRequestOptions = {},
+  ): Promise<TransportResponse<void>> {
+    assertValidHoldB2BOrderRequest(input);
+
+    return this.request<void>({
+      ...options,
+      method: "POST",
+      path: "/v1/order/b2b/hold",
+      body: {
+        waybill_number: input.waybillNumber,
+        remark: input.remark,
+      },
+    });
   }
 }
 

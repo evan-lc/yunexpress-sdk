@@ -90,6 +90,13 @@ export interface GetReturnSendTypesRequest {
   warehouseCountry: string;
 }
 
+export type ReturnArrivalOperationType = 1 | 2 | 3;
+
+export interface ProcessReturnArrivalRequest {
+  orderCodes: string[];
+  operationType: ReturnArrivalOperationType;
+}
+
 export type ReturnLabelItem = {
   order_code?: string;
   label_url?: string;
@@ -215,6 +222,14 @@ export function assertValidGetReturnSendTypesRequest(input: GetReturnSendTypesRe
   assertCode(input.productCode, "productCode");
   assertCountryCode(input.senderCountry, "senderCountry");
   assertCountryCode(input.warehouseCountry, "warehouseCountry");
+}
+
+export function assertValidProcessReturnArrivalRequest(input: ProcessReturnArrivalRequest): void {
+  assertCodeArray(input.orderCodes, "orderCodes", 1000);
+
+  if (![1, 2, 3].includes(input.operationType)) {
+    throw validationError("operationType must be one of 1, 2, or 3.");
+  }
 }
 
 function assertCountryCode(countryCode: string, fieldName: string): void {
