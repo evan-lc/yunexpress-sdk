@@ -11,7 +11,7 @@ TypeScript SDK and CLI for the [YunExpress OpenAPI](https://openapi.yunexpress.c
 - Replaceable signer, token provider, and request/response interceptor hooks
 - Retry-aware HTTP transport with configurable retry policy
 - Unified error hierarchy (`AuthenticationError`, `RateLimitError`, `UpstreamApiError`, `RequestExecutionError`)
-- Implemented coverage for direct orders, B2B lookups, labels, tracking, pricing, billing, exception queries and release, return creation and follow-up queries, and basic lookups
+- Implemented coverage for direct orders, B2B lookups, labels, tracking, pricing, billing, exception queries and mutations, return creation and follow-up queries, and basic lookups
 - CLI with the implemented API operations available as subcommands
 
 ## Install
@@ -139,7 +139,7 @@ The input is normalized to the documented query parameter `order_number`. The re
 
 The implemented resources below are typed. Access them as `client.<namespace>.<method>(...)`.
 
-The official YunExpress docs still expose additional mutation-heavy exception-order, B2B, and return-service endpoints that are not yet modeled in this SDK.
+The official YunExpress docs still expose additional B2B, return-service, and supporting file-upload endpoints that are not yet modeled in this SDK.
 
 | Namespace      | Method                        | Endpoint                                             |
 | -------------- | ----------------------------- | ---------------------------------------------------- |
@@ -177,6 +177,16 @@ The official YunExpress docs still expose additional mutation-heavy exception-or
 |                | `getOptions`                  | `GET  /v1/issue/get-options`                         |
 |                | `getOrderDetail`              | `GET  /v1/issue/get-order-detail`                    |
 | **exceptions** | `releaseIssue`                | `POST /v1/issue/release`                             |
+|                | `handle`                      | `POST /v1/issue/handle`                              |
+|                | `submitAppeal`                | `POST /v1/issue/feedback`                            |
+|                | `requestWarehouseProcess`     | `POST /v1/issue/warehouse-process`                   |
+|                | `changeWaybillNumber`         | `POST /v1/issue/change-waybill-number`               |
+|                | `supplyReturn`                | `POST /v1/issue/return-supply`                       |
+|                | `reForecast`                  | `POST /v1/issue/re-forecast`                         |
+|                | `retryDelivery`               | `POST /v1/issue/retry-delivery`                      |
+|                | `selectSolution`              | `POST /v1/issue/select-solution`                     |
+|                | `submitCustomerFeedback`      | `POST /v1/issue/customer-feedback`                   |
+|                | `modifyDeclarationInfo`       | `POST /v1/issue/modify-declaration-info`             |
 | **returns**    | `getOrderDetail`              | `GET  /v1/openapi/order/detail`                      |
 |                | `getTransferDetail`           | `GET  /v1/openapi/order/transferdetail`              |
 |                | `createReturnOrder`           | `POST /v1/openapi/order/add`                         |
@@ -329,6 +339,16 @@ yunexpress exceptions options --waybill-number YT123
 yunexpress exceptions read --waybill-number YT123
 yunexpress exceptions receive-addresses
 yunexpress exceptions release --waybill-number YT123 --remark "Resolved"
+yunexpress exceptions handle --data @handle.json
+yunexpress exceptions appeal --data @appeal.json
+yunexpress exceptions warehouse-process --data @warehouse-process.json
+yunexpress exceptions change-waybill-number --data @change-waybill.json
+yunexpress exceptions return-supply --data @return-supply.json
+yunexpress exceptions re-forecast --data @re-forecast.json
+yunexpress exceptions retry-delivery --data @retry-delivery.json
+yunexpress exceptions select-solution --data @select-solution.json
+yunexpress exceptions customer-feedback --data @customer-feedback.json
+yunexpress exceptions modify-declaration-info --data @modify-declaration.json
 
 # Returns
 yunexpress returns get --order-code RT10001
@@ -343,7 +363,7 @@ yunexpress returns send-types --product-code DE-DHL-RT --sender-country DE --war
 
 ### Data Input
 
-For commands with complex payloads (`orders create`, `returns create`), use the `--data` flag:
+For commands with complex payloads (`orders create`, `returns create`, and many `exceptions` mutations), use the `--data` flag:
 
 | Format      | Example                          |
 | ----------- | -------------------------------- |

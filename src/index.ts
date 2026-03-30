@@ -152,15 +152,37 @@ export type {
 } from "./resources/pricing/types.ts";
 
 export type {
+  ChangeIssueWaybillNumberRequest,
   GetIssueOptionsRequest,
   GetIssueOptionsResponse,
   GetIssueOrderDetailRequest,
   GetIssueOrderDetailResponse,
   GetIssueReceiveAddressesResponse,
+  HandleIssueRequest,
+  IssueAddressInfo,
+  IssueChangeNumberType,
+  IssueDeclarationInfoUpdateItem,
+  IssueHandleType,
+  IssueHandlingPlan,
   IssueOptionItem,
+  IssueReceiverInfo,
+  IssueReforecastDeclarationItem,
   IssueReceiveAddressItem,
+  IssueReturnType,
+  IssueSolutionItem,
+  IssueType,
+  IssueWarehouseProcessCode,
   MarkIssueReadRequest,
+  ModifyIssueDeclarationInfoRequest,
+  RequestIssueWarehouseProcessRequest,
+  ReforecastIssueRequest,
   ReleaseIssueRequest,
+  RetryIssueDeliveryRequest,
+  SelectIssueSolutionRequest,
+  SelectIssueSolutionResponse,
+  SubmitIssueAppealRequest,
+  SubmitIssueCustomerFeedbackRequest,
+  SupplyIssueReturnRequest,
 } from "./resources/exceptions/types.ts";
 
 export type {
