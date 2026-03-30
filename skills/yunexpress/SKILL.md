@@ -1,332 +1,293 @@
 ---
 name: yunexpress
 description: >
-  Operate YunExpress international shipping through the yunexpress CLI on behalf of users who may not be developers.
-  Use this skill whenever the user mentions YunExpress, international shipping labels, waybills, cross-border parcels,
-  tracking shipments, shipping cost estimates, customs declarations, or managing logistics orders — even if they
-  don't mention "CLI" or "SDK". Also trigger when the user wants to cancel or hold a shipment, check billing,
-  handle shipping exceptions, create return orders, or look up supported countries and products for a logistics provider.
-  Do NOT use this skill for questions about contributing to or extending the yunexpress-sdk codebase itself.
+  Operate YunExpress shipping through the yunexpress CLI for non-technical users.
+  Use this skill whenever the user needs to create, price, track, cancel, hold, label, bill, return, or troubleshoot YunExpress shipments,
+  including B2B shipments, tracking subscriptions, shipping exceptions, return transfers, warehouse-arrival actions, and IOSS or VAT registration.
+  Translate plain-language shipping requests into the right yunexpress commands, ask for missing shipment details, and consult the bundled OpenAPI
+  reference for exact payload schemas instead of guessing. Do NOT use this skill for SDK maintenance or codebase contribution questions.
 ---
 
 # YunExpress CLI Skill
 
-You are helping a non-technical user manage their YunExpress international shipping operations. Your job is to translate what they want to do — in plain language — into the correct `yunexpress` CLI commands, run them, and explain the results in a way that makes sense to someone who is not a developer.
+You are helping a non-technical user manage YunExpress shipping operations. Translate the user's request into the correct `yunexpress` CLI command, run it, and explain the JSON response in plain language.
+
+## Scope and references
+
+- Stay inside the CLI surface documented here. Do not claim support for official YunExpress endpoints that are not exposed by the current CLI.
+- Use `references/openapi.yaml` whenever you need exact request fields, enum values, or response shapes. Do this especially for any command that uses `--data`.
+- Start OpenAPI lookups from the matching bundled paths when they exist:
+  - Direct orders: `/v1/order/package/create`, `/v1/order/hold`, `/v1/pickup/get`
+  - Tracking subscriptions: `/v1/track-service/subscribe-by-order`, `/v1/track-service/subscribe-by-shipping`
+  - Pricing: `/v1/price-trial/get`
+  - Exceptions: `/v1/issue/release`
+  - Returns: `/v1/openapi/order/add`
+- The bundled spec is still a partial snapshot. Some newer CLI actions, especially B2B creation flows, pricing `trial-v2`, return transfer and arrival operations, and IOSS or VAT registration, may not have a matching path in `references/openapi.yaml` yet.
+- When the path is missing from the bundled spec, use the command contract in this skill as the source of truth, ask focused follow-up questions, and do not invent optional fields.
+- Never invent JSON keys. If the payload is unclear, read the OpenAPI file and ask follow-up questions.
 
 ## Before you start
 
-The CLI binary is `yunexpress` (installed from the `yunexpress-sdk` package). Before running any commands, make sure the CLI is available:
+The CLI binary is `yunexpress`. Check that it is available before running commands:
 
 ```bash
 yunexpress --help
 ```
 
-If it's not found, install the package first:
+If it is not installed, install it first:
 
 ```bash
 npm install -g yunexpress-sdk
 ```
 
-## Authentication setup
+All commands follow this pattern:
 
-The CLI needs credentials to talk to the YunExpress API. There are two environments:
+```bash
+yunexpress <resource> <action> [options]
+```
 
-| Environment    | What it's for                            | Required credentials                                  |
-| -------------- | ---------------------------------------- | ----------------------------------------------------- |
-| **Sandbox**    | Testing without affecting real shipments | `--access-token`                                      |
-| **Production** | Real shipments                           | `--app-id` + `--api-key` (auto-exchanges for a token) |
+For complex inputs, prefer file-backed JSON:
 
-**How credentials are resolved** (first match wins):
+```bash
+yunexpress orders create --data @order.json
+cat order.json | yunexpress orders create --data -
+```
 
-1. CLI flags (`--app-id`, `--api-key`, `--access-token`, `--environment`)
-2. Environment variables (`YUNEXPRESS_APP_ID`, `YUNEXPRESS_API_KEY`, `YUNEXPRESS_ACCESS_TOKEN`, `YUNEXPRESS_ENVIRONMENT`)
-3. Config file at `~/.yunexpressrc.json`
+## Authentication and config
 
-If the user hasn't set up credentials yet, help them create a config file:
+Supported global options include `--config`, `--environment`, `--app-id`, `--api-key`, `--access-token`, `--source-key`, `--base-url`, and `--debug`.
+
+There are two environments:
+
+| Environment  | Purpose           | Required credentials       |
+| ------------ | ----------------- | -------------------------- |
+| `sandbox`    | Test traffic only | `--access-token`           |
+| `production` | Live shipments    | `--app-id` and `--api-key` |
+
+- Production can also accept `--access-token` if the user already has one.
+- `--source-key` and `--base-url` are optional overrides.
+
+Credential resolution order is:
+
+1. CLI flags
+2. Environment variables: `YUNEXPRESS_APP_ID`, `YUNEXPRESS_API_KEY`, `YUNEXPRESS_ACCESS_TOKEN`, `YUNEXPRESS_ENVIRONMENT`, `YUNEXPRESS_SOURCE_KEY`, `YUNEXPRESS_BASE_URL`
+3. Config file at `~/.yunexpressrc.json`, or a custom file passed with `--config`
+
+Example production config:
 
 ```json
 {
   "appId": "their-app-id",
   "apiKey": "their-api-key",
-  "environment": "production"
+  "environment": "production",
+  "sourceKey": "optional-source-key"
 }
 ```
 
-Save it to `~/.yunexpressrc.json`. Ask the user for their credentials — never invent or guess them.
-
-For sandbox testing, the config looks like:
+Example sandbox config:
 
 ```json
 {
   "accessToken": "their-sandbox-token",
-  "environment": "sandbox"
+  "environment": "sandbox",
+  "sourceKey": "optional-source-key"
 }
 ```
 
-## Command reference
-
-Every command follows the pattern: `yunexpress <resource> <action> [options]`
-
-### Orders — creating and managing shipments
-
-**Create a shipment:**
-
-```bash
-yunexpress orders create --data @order.json
-# or inline:
-yunexpress orders create --data '{ ... }'
-# or pipe from stdin:
-cat order.json | yunexpress orders create --data -
-```
-
-An order payload needs at minimum:
-
-- `productCode` — the shipping product (run `yunexpress basic products` to see available ones)
-- `customerOrderNumber` — your own reference number
-- `weightUnit` — "KG", "G", or "LBS"
-- `sizeUnit` — "CM" or "IN"
-- `packages` — array with at least one item containing `weight` (and optionally `length`, `width`, `height`)
-- `receiver` — who's getting the package (`name`, `countryCode`, `addressLine1`, `city`, `postalCode`, `phone`)
-- `declarationInfo` — customs declaration items (`name`, `quantity`, `declaredValue`, `currency`, `unitWeight`)
+Never invent credentials. Always ask the user for them.
 
-When the user describes a shipment in plain language (e.g., "I need to ship a 1.5kg package to the US"), build the JSON payload for them based on what they told you. Ask for any missing required fields.
+## Command map
 
-**Example payload:**
+### Direct orders
 
-```json
-{
-  "productCode": "STANDARD",
-  "customerOrderNumber": "MY-ORDER-001",
-  "weightUnit": "KG",
-  "sizeUnit": "CM",
-  "packages": [{ "weight": 1.5, "length": 20, "width": 15, "height": 10 }],
-  "receiver": {
-    "name": "Jane Smith",
-    "countryCode": "US",
-    "addressLine1": "123 Main Street",
-    "city": "New York",
-    "postalCode": "10001",
-    "phone": "+1-555-1234",
-    "email": "jane@example.com"
-  },
-  "declarationInfo": [
-    {
-      "name": "Cotton T-Shirt",
-      "quantity": 2,
-      "declaredValue": 25.0,
-      "currency": "USD",
-      "unitWeight": 0.3
-    }
-  ]
-}
-```
+Use direct orders for normal parcel shipments.
 
-**Look up an order:**
+- Create: `yunexpress orders create --data @order.json`
+- Get detail: `yunexpress orders get --order-number YT2231431267000001`
+- Get sender: `yunexpress orders get-sender --order-number YT2231431267000001`
+- Last-mile carriers: `yunexpress orders last-mile-carriers --waybill-numbers YT001,YT002`
+- Modify weight: `yunexpress orders modify-weight --waybill-number YT001 --weight 2.0 --weight-unit KG`
+- Cancel: `yunexpress orders cancel --waybill-number YT001`
+- Hold: `yunexpress orders hold --waybill-number YT001 --remark "Manual review"`
+- Pickup points: `yunexpress orders pickup-points --country-code DE --postal-code 10115`
 
-```bash
-yunexpress orders get --order-number YT2231431267000001
-```
+Before `orders create`, collect at least `productCode`, `customerOrderNumber`, `weightUnit`, `sizeUnit`, `packages`, `receiver`, and `declarationInfo`. If any structure is uncertain, read `references/openapi.yaml` at `/v1/order/package/create` before building the payload.
 
-**Get sender info for an order:**
+Run `yunexpress basic products --country-code XX` before order creation when the user does not know the product code. Use `yunexpress pricing trial ...` or `yunexpress pricing trial-v2 --data @trial.json` before creation when the user wants pricing first.
 
-```bash
-yunexpress orders get-sender --order-number YT2231431267000001
-```
+### B2B orders
 
-**Check last-mile carriers** (which local carrier delivers the final leg):
+Use B2B commands when the user explicitly needs B2B order flows or B2B warehouse data.
 
-```bash
-yunexpress orders last-mile-carriers --waybill-numbers YT001,YT002
-```
+- Create: `yunexpress b2b create --data @b2b-order.json`
+- Get detail: `yunexpress b2b get --order-number B2B-ORDER-001`
+- Get label: `yunexpress b2b label --order-number B2B-ORDER-001`
+- Last-mile carriers: `yunexpress b2b last-mile-carriers --waybill-numbers YT001,YT002`
+- List products: `yunexpress b2b products --country-code DE`
+- List address types: `yunexpress b2b address-types`
+- List addresses: `yunexpress b2b addresses --address-type 1 --country-code DE`
+- List self warehouses: `yunexpress b2b self-warehouses --product-code B2B001`
+- List collect warehouses: `yunexpress b2b collect-warehouses`
+- Cancel: `yunexpress b2b cancel --waybill-number YT001`
+- Hold: `yunexpress b2b hold --waybill-number YT001 --remark "Pending documents"`
 
-**Modify the weight** of a shipment (before it's picked up):
+The bundled spec may not include the newer B2B create path yet. Discover products and warehouse-related metadata first, then collect the remaining shipment fields explicitly and avoid inventing optional keys.
 
-```bash
-yunexpress orders modify-weight --waybill-number YT001 --weight 2.0 --weight-unit KG
-```
+### Tracking
 
-**Cancel an order:**
+- Get tracking: `yunexpress tracking get --order-number YT2231431267000001`
+- Subscribe by waybill: `yunexpress tracking subscribe-waybill --waybill-numbers YT001,YT002 --subscribe-type L --query-types Y`
+- Cancel by waybill: `yunexpress tracking cancel-waybill --waybill-numbers YT001,YT002`
+- Get waybill subscription: `yunexpress tracking get-waybill-sub --waybill-numbers YT001,YT002`
+- Subscribe by product: `yunexpress tracking subscribe-product --product-codes STANDARD,EXPRESS --subscribe-type N --query-types C,T --country-codes US,CA`
+- Cancel by product: `yunexpress tracking cancel-product --product-codes STANDARD --country-codes US,CA`
+- Get product subscription: `yunexpress tracking get-product-sub --product-code STANDARD`
 
-```bash
-yunexpress orders cancel --waybill-number YT001
-```
+Useful enum values:
 
-### Tracking — where's my package?
+- `subscribe-type`: `A`, `F`, `L`, `N`, `EL`, `ANC`
+- `query-types`: `C`, `Y`, `T`
 
-**Get tracking info:**
+Waybill and product subscription inputs are comma-separated and should be batched in groups of 20 or fewer.
 
-```bash
-yunexpress tracking get --order-number YT2231431267000001
-```
+### Labels and documents
 
-**Subscribe to tracking updates** (push notifications for status changes):
+- Label: `yunexpress labels get --order-number YT2231431267000001`
+- Shipping docs: `yunexpress labels shipping-docs --order-number YT2231431267000001`
+- Proof of delivery: `yunexpress labels pod --order-number YT2231431267000001`
 
-```bash
-yunexpress tracking subscribe-waybill --waybill-numbers YT001,YT002 --subscribe-type L --query-types Y
-yunexpress tracking subscribe-product --product-codes STANDARD,EXPRESS --subscribe-type N --query-types C,T
-```
+### Pricing
 
-**Cancel tracking subscription:**
+- Simple trial: `yunexpress pricing trial --country-code US --weight 0.5 --weight-unit KG --package-type E --postal-code 10001`
+- Complex trial: `yunexpress pricing trial-v2 --data @trial-v2.json`
 
-```bash
-yunexpress tracking cancel-waybill --waybill-numbers YT001,YT002
-yunexpress tracking cancel-product --product-codes STANDARD
-```
+Useful flag values:
 
-**Check subscription status:**
+- `--package-type`: `C`, `E`, or `F`
+- `--size-unit`: `CM` or `INCH`
 
-```bash
-yunexpress tracking get-waybill-sub --waybill-numbers YT001,YT002
-yunexpress tracking get-product-sub --product-code STANDARD
-```
+Use `trial-v2` for richer payloads. If the V2 shape is not present in `references/openapi.yaml`, collect the full pricing inputs from the user and keep the JSON minimal and explicit.
 
-### Labels — printing shipping documents
+### Exceptions
 
-**Get a shipping label:**
+Start by inspecting the issue before changing anything.
 
-```bash
-yunexpress labels get --order-number YT2231431267000001
-```
+- Get detail: `yunexpress exceptions get --waybill-number YT001`
+- Get options: `yunexpress exceptions options --waybill-number YT001`
+- Mark as read: `yunexpress exceptions read --waybill-number YT001`
+- Receive addresses: `yunexpress exceptions receive-addresses`
+- Release issue: `yunexpress exceptions release --waybill-number YT001 --remark "Issue resolved" --extra-codes 203`
 
-**Get all shipping documents:**
+The following commands are payload-driven. Check `references/openapi.yaml` first, and if the matching path is missing from the bundled spec, ask for the required business fields explicitly before you construct `--data`:
 
-```bash
-yunexpress labels shipping-docs --order-number YT2231431267000001
-```
+- `yunexpress exceptions handle --data @handle.json`
+- `yunexpress exceptions appeal --data @appeal.json`
+- `yunexpress exceptions warehouse-process --data @warehouse-process.json`
+- `yunexpress exceptions change-waybill-number --data @change-waybill.json`
+- `yunexpress exceptions return-supply --data @return-supply.json`
+- `yunexpress exceptions re-forecast --data @re-forecast.json`
+- `yunexpress exceptions retry-delivery --data @retry-delivery.json`
+- `yunexpress exceptions select-solution --data @select-solution.json`
+- `yunexpress exceptions customer-feedback --data @customer-feedback.json`
+- `yunexpress exceptions modify-declaration-info --data @modify-declaration.json`
 
-**Get proof of delivery:**
+All exception mutations change YunExpress state. Restate the action in plain language and ask for explicit confirmation first.
 
-```bash
-yunexpress labels pod --order-number YT2231431267000001
-```
+### Returns
 
-### Pricing — how much will it cost?
+Discover valid return products and warehouse choices before creating or transferring return orders.
 
-**Get a shipping price estimate:**
+- Get return order: `yunexpress returns get --order-code RETURN001`
+- Get transfer detail: `yunexpress returns transfer-detail --transfer-code TRANSFER001`
+- Create return order: `yunexpress returns create --data @return.json`
+- Create transfer order: `yunexpress returns transfer --data @transfer.json`
+- Cancel return orders: `yunexpress returns cancel --order-codes RETURN001,RETURN002`
+- Download labels: `yunexpress returns labels --order-codes RETURN001,RETURN002`
+- List products: `yunexpress returns products`
+- List warehouses: `yunexpress returns warehouses --product-code RET001 --country-code DE`
+- List send types: `yunexpress returns send-types --product-code RET001 --sender-country DE --warehouse-country NL`
+- Process arrival: `yunexpress returns operation --order-codes RETURN001 --operation-type 3`
 
-```bash
-yunexpress pricing trial \
-  --country-code US \
-  --weight 0.5 \
-  --weight-unit KG \
-  --package-type 1 \
-  --postal-code 10001
-```
+`operation-type` values are `1` for discard, `2` for destroy, and `3` for extend-storage. Use `references/openapi.yaml` for return payloads when the matching path exists, and otherwise ask for the exact business fields before building JSON. Confirm before `cancel` or `operation`.
 
-Optional pricing flags: `--product-group-code`, `--pieces`, `--length`, `--width`, `--height`, `--size-unit`, `--origin`.
+### Billing
 
-### Exceptions — handling shipment problems
+- Billing detail: `yunexpress billing detail --bill-code BILL202403 --bill-type N --page-no 1 --page-size 10`
+- Freight detail: `yunexpress billing freight --waybill-number YT001`
 
-**Release (resolve) a shipment issue:**
+`bill-type` can be `I`, `Q`, `T`, `N`, `K`, `C`, `R`, `V`, `TJ`, or `TT`.
 
-```bash
-yunexpress exceptions release --waybill-number YT001 --remark "Issue resolved"
-```
+Billing detail responses are grouped objects with sections such as expenditure records, not just a flat list. Summarize the sections, totals, and any line items the user is likely to care about.
 
-Optional: `--new-waybill-numbers`, `--extra-codes`.
+### Basic lookups and registration
 
-### Returns — return shipments
+- Countries: `yunexpress basic countries`
+- Products: `yunexpress basic products --country-code US`
+- Register IOSS: `yunexpress basic register-ioss --data @ioss.json`
+- Register VAT: `yunexpress basic register-vat --data @vat.json`
 
-**Create a return order:**
+The bundled spec may not include the newer IOSS and VAT registration paths. Ask for the exact registration data, keep the payload explicit, and do not invent fields. These commands are also good discovery steps before pricing or order creation.
 
-```bash
-yunexpress returns create --data @return-payload.json
-```
+## Result handling
 
-The return payload uses the same `--data` pattern as order creation (JSON string, `@file`, or `-` for stdin).
+The CLI returns JSON. Translate that into a short operational summary.
 
-### Billing — costs and invoices
-
-**Get billing detail by bill code and type:**
-
-```bash
-yunexpress billing detail --bill-code BILL202403 --bill-type N
-```
-
-**Paginate billing detail results:**
-
-```bash
-yunexpress billing detail --bill-code BILL202403 --bill-type N --page-no 1 --page-size 10
-```
-
-**Get freight detail:**
-
-```bash
-yunexpress billing freight --waybill-number YT001
-```
-
-Pagination: `--page-no 1 --page-size 10`
-
-### Basic lookups — what countries and products are available?
-
-**List supported countries:**
-
-```bash
-yunexpress basic countries
-```
-
-**List available shipping products:**
-
-```bash
-yunexpress basic products --country-code US
-```
-
-These are useful reference commands — run them when the user needs to know which country codes or product codes to use.
-
-## How to present results
-
-The CLI outputs JSON. Your job is to translate that into a clear, human-readable summary. Some guidelines:
-
-- **Order creation**: Tell the user their waybill number and tracking number. These are the identifiers they'll need going forward.
-- **Tracking**: Summarize the current status in plain language. If there are multiple tracking events, show them as a timeline from newest to oldest.
-- **Pricing**: Show the estimated cost prominently, with currency. Mention any surcharges.
-- **Labels**: The response may contain a URL or base64-encoded PDF. If it's a URL, give it to the user. If it's base64, save it to a file and tell them where.
-- **Errors**: Translate error codes into plain language. Common issues:
-  - Authentication failures → "Your credentials seem wrong. Let's check your config."
-  - Rate limiting → "Too many requests. Let's wait a moment and try again."
-  - Validation errors → Explain which field is wrong and what it should look like.
-  - Network errors → "Couldn't reach the YunExpress servers. Check your internet connection."
+- Order or B2B creation: report the waybill number, order number, and any label or document links.
+- Tracking: summarize the latest status first, then show a short timeline if there are multiple events.
+- Pricing: show the best estimate, currency, and relevant service choices or surcharges.
+- Labels and return labels: if the response includes a URL, share it; if it includes base64 data, save it to a file and tell the user where.
+- Billing: explain grouped sections and call out totals, fees, or problem line items.
+- Errors:
+  - Authentication failure: check config, environment, and credentials.
+  - Validation error: point to the missing or invalid field and use the OpenAPI schema to fix it.
+  - Rate limit: wait briefly, then retry.
+  - Network issue: explain that the YunExpress API could not be reached.
 
 ## Common workflows
 
-### "I want to ship a package"
+### Ship a direct parcel
 
-1. Ask: Where is it going? How heavy is it? What's in it?
-2. Run `yunexpress basic products` to suggest suitable products
-3. Optionally run `yunexpress pricing trial ...` to show cost estimates
-4. Build the order JSON from their answers
-5. Run `yunexpress orders create --data '...'`
-6. Report the waybill number and tracking number
+1. Ask for destination, weight, dimensions, contents, and receiver details.
+2. Run `yunexpress basic products --country-code XX` if the product code is not known.
+3. Optionally run pricing first.
+4. Build the JSON payload. If any field is unclear, read `references/openapi.yaml`.
+5. Confirm the shipment summary.
+6. Run `yunexpress orders create --data @order.json`.
+7. Report the waybill number and offer label retrieval or tracking.
 
-### "Where is my package?"
+### Create a B2B shipment
 
-1. Ask for their order number or waybill number
-2. Run `yunexpress tracking get --order-number ...`
-3. Summarize the status in plain language
+1. Identify the destination country, product, and warehouse requirements.
+2. Run B2B discovery commands such as `products`, `address-types`, `addresses`, `self-warehouses`, or `collect-warehouses`.
+3. Build the payload from `references/openapi.yaml` when the matching path exists; otherwise collect the remaining B2B fields explicitly.
+4. Confirm the shipment summary.
+5. Run `yunexpress b2b create --data @b2b-order.json`.
 
-### "How much will shipping cost?"
+### Subscribe to tracking updates
 
-1. Ask: destination country, weight, and optionally dimensions
-2. Run `yunexpress pricing trial --country-code XX --weight N --weight-unit KG`
-3. Present the price clearly
+1. Confirm whether the user wants subscriptions by waybill or by product.
+2. Collect the `subscribe-type` and optional `query-types`.
+3. Run the subscribe command.
+4. Use the matching `get-*` subscription command to confirm the subscription is active.
 
-### "I need to cancel/change a shipment"
+### Resolve an exception
 
-1. Ask for the waybill number
-2. For cancellation: `yunexpress orders cancel --waybill-number ...`
-3. For weight change: `yunexpress orders modify-weight --waybill-number ... --weight N --weight-unit KG`
-4. Confirm success or explain why it failed (e.g., already shipped)
+1. Start with `exceptions get` and `exceptions options`.
+2. If a mutation is needed, use the matching `references/openapi.yaml` schema when it exists, and otherwise ask for the required business details explicitly.
+3. Restate the action and ask for explicit confirmation.
+4. Run the mutation and explain the updated status.
 
-### "I need a shipping label"
+### Run a return workflow
 
-1. Ask for the order number
-2. `yunexpress labels get --order-number ...`
-3. If the response has a download URL, share it. If it returns base64 data, save to a file.
+1. Discover valid return products, warehouses, and send types first.
+2. Build `create` or `transfer` payloads from `references/openapi.yaml` when the bundled path exists, and otherwise collect the exact business fields first.
+3. Confirm before `returns cancel` or `returns operation`.
+4. Report return order codes, transfer codes, and label options.
 
-## Important notes
+## Guardrails
 
-- **Never guess credentials.** Always ask the user for their appId, apiKey, or accessToken.
-- **Always confirm before destructive actions.** Before cancelling an order, confirm with the user: "Are you sure you want to cancel waybill YT001?"
-- **Use `--debug` when troubleshooting.** Append `--debug` to any command to see the raw request/response, which helps diagnose issues.
-- **Country codes are two-letter ISO codes** (US, CN, DE, etc.). If the user says a country name, convert it to the code.
-- **Waybill numbers typically start with "YT"** — if the user gives you just a number, they may mean the customer order number instead. The `orders get` command accepts `--order-number` which can be either.
+- Never guess credentials, identifiers, or payload fields.
+- Ask follow-up questions whenever required fields are missing.
+- Confirm any destructive or state-changing command before running it. At minimum this includes `orders cancel`, `orders hold`, `b2b cancel`, `b2b hold`, all `exceptions` state-changing commands, `returns cancel`, and `returns operation`.
+- Use `--debug` when troubleshooting unexpected behavior.
+- If the user is asking to change SDK code, CLI internals, or repository implementation, stop using this skill and switch back to normal coding behavior.
