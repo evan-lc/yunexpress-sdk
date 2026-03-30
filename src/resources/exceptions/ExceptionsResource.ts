@@ -26,7 +26,6 @@ import {
   type IssueAddressInfo,
   type IssueDeclarationInfoUpdateItem,
   type IssueReforecastDeclarationItem,
-  type IssueReceiverInfo,
   type RequestIssueWarehouseProcessRequest,
   type ReforecastIssueRequest,
   type MarkIssueReadRequest,
