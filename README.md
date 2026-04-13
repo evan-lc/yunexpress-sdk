@@ -1,6 +1,6 @@
 # yunexpress-sdk
 
-TypeScript SDK and CLI for the [YunExpress OpenAPI](https://openapi.yunexpress.cn). Ships a typed Node.js client covering orders, B2B, labels, tracking, pricing, billing, exceptions, returns, and basic data lookups, plus a `yunexpress` CLI for quick terminal access.
+TypeScript SDK and CLI for the [YunExpress OpenAPI](https://open.yunexpress.cn/). Ships a typed Node.js client covering orders, B2B, labels, tracking, pricing, billing, exceptions, returns, and basic data lookups, plus a `yunexpress` CLI for quick terminal access.
 
 ## Features
 
